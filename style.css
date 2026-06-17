@@ -229,7 +229,7 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
 /* Mobile adjustments */
 @media (max-width: 600px) {
   h1 {
-    font-size: .8rem; /* You can make this number smaller or larger to fit! */
+    font-size: .5rem; /* You can make this number smaller or larger to fit! */
     margin-top: 10px;
     margin-bottom: 10px;
   }
