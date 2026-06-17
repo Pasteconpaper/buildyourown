@@ -234,8 +234,6 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
   }
 }
 /* Mobile Canvas Shrink */
-@media (max-width: 800px) {
-  .cutting-board {
-    height: 300px !important;
-  }
+@media (max-width: 450px) {
+  .cutting-board { transform: scale(0.85); transform-origin: center top; margin-bottom: 0px; }
 }
