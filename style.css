@@ -26,25 +26,10 @@ body {
 .kitchen-container { display: flex; gap: 40px; width: 100%; align-items: stretch; justify-content: center; }
 
 /* PANTRY ENGINE */
-.pantry { 
-  width: 380px; 
-  display: flex; 
-  flex-direction: column; 
-  transition: opacity 0.25s ease, filter 0.25s ease; 
-  box-sizing: border-box; 
-  position: relative; /* Elevates the element */
-  z-index: 10; /* Forces it above the cutting board */
-}
+.pantry { width: 380px; display: flex; flex-direction: column; transition: opacity 0.25s ease, filter 0.25s ease; box-sizing: border-box; }
 .pantry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 20px; align-content: space-evenly; flex-grow: 1; padding-bottom: 20px; }
 
-.name-group { 
-  width: 100%; 
-  text-align: center; 
-  margin-top: 25px; 
-  background-color: #fdfaf2; /* Acts as an opaque shield */
-  padding: 15px 0; /* Creates a solid buffer zone */
-  border-radius: 12px; /* Smooths the edges */
-}
+.name-group { width: 100%; text-align: center; margin-top: 25px; }
 
 .ingredient-group { margin-bottom: 0; text-align: center; } 
 .ingredient-group label { font-size: 0.95rem; color: #1a1a1a; margin-bottom: 5px; display: block; text-transform: uppercase; font-weight: 900; letter-spacing: 1px; }
@@ -131,7 +116,7 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
 
 /* THE CUTTING BOARD SPACE (Height reduced to 300px) */
 .cutting-board-wrapper { position: relative; display: flex; flex-direction: column; width: 390px; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15); }
-.cutting-board { position: relative; width: 100%; height: 450px; border: none !important; background: transparent !important; border-radius: 0px; overflow: hidden; box-shadow: none !important; }
+.cutting-board { position: relative; width: 100%; height: 450px; border: none !important; background: transparent !important; border-radius: 0px; overflow: visible; box-shadow: none !important; }
 
 /* FLOATING TOY SCRAMBLER BADGE */
 .loco-btn { position: absolute; bottom: 0; right: 0; width: 65px; height: 65px; border-radius: 50% !important; background-color: #fbfbf6; border: 4px solid #1a1a1a !important; box-shadow: 4px 4px 0px #1a1a1a !important; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; padding: 0 !important; box-sizing: border-box; z-index: 50; }
@@ -244,16 +229,10 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
 
 /* Unified Mobile Canvas Fix */
 @media (max-width: 450px) {
-  /* This creates a hard window that chops off the invisible extra space */
-  .cutting-board-wrapper {
-    height: 340px !important;
-    overflow: hidden !important;
-  }
-  
-  /* This scales your character down to fit nicely inside the new window */
   .cutting-board { 
-    transform: scale(0.85) !important; 
-    transform-origin: center top !important; 
-    margin-bottom: 0px !important; 
+    height: 300px !important; 
+    transform: scale(0.85); 
+    transform-origin: center top; 
+    margin-bottom: 0px; 
   }
 }
