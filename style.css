@@ -226,3 +226,11 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
 .trash-btn:hover { 
   background-color: #d32f2f !important; 
 }
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.5rem; /* You can make this number smaller or larger to fit! */
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+}
