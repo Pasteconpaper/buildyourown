@@ -114,9 +114,9 @@ input[type="text"] { width: 100%; background: #fbfbf6; color: #1a1a1a; border: 4
 input[type="text"]:focus { border-color: #ea7316; box-shadow: 4px 4px 0px #ea7316; }
 input[type="text"]::placeholder { color: #888; font-weight: normal; }
 
-/* THE CUTTING BOARD SPACE */
+/* THE CUTTING BOARD SPACE (Height reduced to 300px) */
 .cutting-board-wrapper { position: relative; display: flex; flex-direction: column; width: 390px; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15); }
-.cutting-board { position: relative; width: 100%; height: 450px; border: none !important; background: transparent !important; border-radius: 0px; overflow: visible; box-shadow: none !important; }
+.cutting-board { position: relative; width: 100%; height: 300px; border: none !important; background: transparent !important; border-radius: 0px; overflow: visible; box-shadow: none !important; }
 
 /* FLOATING TOY SCRAMBLER BADGE */
 .loco-btn { position: absolute; bottom: 0; right: 0; width: 65px; height: 65px; border-radius: 50% !important; background-color: #fbfbf6; border: 4px solid #1a1a1a !important; box-shadow: 4px 4px 0px #1a1a1a !important; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; padding: 0 !important; box-sizing: border-box; z-index: 50; }
@@ -225,4 +225,11 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
 }
 .trash-btn:hover { 
   background-color: #d32f2f !important; 
+}
+
+/* MOBILE TITLE FIX */
+@media (max-width: 600px) {
+  .app-header h1 {
+    font-size: 1.4rem !important;
+  }
 }
