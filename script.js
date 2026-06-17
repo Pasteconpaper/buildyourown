@@ -509,7 +509,12 @@ window.confirmStartOver = function() {
   document.getElementById('scrambleBtn').classList.remove('depleted');
   canvas.clear();
   Object.keys(indices).forEach(k => indices[k] = 0);
+  
+  // Reset rig colors on Start Over too!
+  rigColors.body = '#ff9800'; rigColors.hair = '#000000'; rigColors.eye = '#000000'; rigColors.mouth = '#000000'; rigColors.arm = '#4caf50'; rigColors.leg = '#4caf50';
+  
   renderCarousels();
+  initColorPickers();
   buildCreature();
   updateClosetUI();
 }
@@ -683,6 +688,51 @@ window.addEventListener('keyup', e => {
   }
 });
 
+// --- NEW INTRO SCRAMBLE ---
+function playIntroScramble() {
+  let flashCount = 0;
+  const maxFlashes = 12; // Flashes before settling
+  const speed = 120;     // Speed in ms
+  
+  const scrambleTimer = setInterval(() => {
+    // 1. Clear current canvas objects
+    canvas.getObjects().filter(o => o.rigPart && o.rigPart !== 'accessory').forEach(obj => canvas.remove(obj));
+    
+    // 2. Generate a random pool of colors from swatches
+    let pool = [...swatches];
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    
+    // 3. Randomize the state without spending Scramble tokens
+    Object.keys(indices).forEach((cat, index) => { 
+        indices[cat] = Math.floor(Math.random() * lib[cat].length); 
+        rigColors[cat] = pool[index]; 
+    });
+    
+    // 4. Render temporarily to canvas and update UI carousels
+    buildCreature(false, false);
+    canvas.renderAll();
+    
+    flashCount++;
+
+    // 5. Check if it's time to stop and reset
+    if (flashCount >= maxFlashes) {
+      clearInterval(scrambleTimer);
+      
+      // Settle back to default setup
+      canvas.getObjects().filter(o => o.rigPart && o.rigPart !== 'accessory').forEach(obj => canvas.remove(obj));
+      Object.keys(indices).forEach(k => indices[k] = 0);
+      rigColors.body = '#ff9800'; rigColors.hair = '#000000'; rigColors.eye = '#000000'; rigColors.mouth = '#000000'; rigColors.arm = '#4caf50'; rigColors.leg = '#4caf50';
+      
+      // Build the final initial state
+      renderCarousels();
+      initColorPickers();
+      buildCreature(true, true);
+      
+      playPopSound(); // Signal to the user that it is ready to use!
+    }
+  }, speed);
+}
+
 // --- MAP EVERYTHING TO WINDOW ---
 window.randomizeCreature = randomizeCreature;
 window.undo = undo;
@@ -699,4 +749,4 @@ window.addAccessory = addAccessory;
 window.toggleCloset = toggleCloset;
 
 // --- INIT ---
-initColorPickers(); renderCarousels(); renderCloset(); buildCreature();
+initColorPickers(); renderCarousels(); renderCloset(); playIntroScramble();
