@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Build your own - Neo Brutalism</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+<div class="app-wrapper">
+  <header class="app-header">
+    <h1>El Menú Chiquito</h1>
+    <p>Step into the pantry and cook up a character! Mix, match, stretch, and spin your favorite ingredients into a custom sticker sheet. Let's see what's cooking!</p>
+  </header>
+
+  <div class="kitchen-container">
+    
+    <div class="pantry">
+      
+      <div class="pantry-grid">
+        <div class="ingredient-group">
+          <label>Body</label>
+          <div class="carousel-container">
+            <button class="carousel-nav" onclick="window.swapRigElement('body', -1)">❮</button>
+            <div class="carousel-center">
+              <div class="carousel-view" id="bodyDisplay" onclick="window.toggleColorPicker('body', event)"></div>
+              <div class="color-electron" id="electron-body" onclick="window.toggleColorPicker('body', event)"></div>
+              <div class="electron-popout" id="popout-body"></div>
+            </div>
+            <button class="carousel-nav" onclick="window.swapRigElement('body', 1)">❯</button>
+          </div>
+        </div>
+        
+        <div class="ingredient-group">
+          <label>Hair</label>
+          <div class="carousel-container">
+            <button class="carousel-nav" onclick="window.swapRigElement('hair', -1)">❮</button>
+            <div class="carousel-center">
+              <div class="carousel-view" id="hairDisplay" onclick="window.toggleColorPicker('hair', event)"></div>
+              <div class="color-electron" id="electron-hair" onclick="window.toggleColorPicker('hair', event)"></div>
+              <div class="electron-popout" id="popout-hair"></div>
+            </div>
+            <button class="carousel-nav" onclick="window.swapRigElement('hair', 1)">❯</button>
+          </div>
+        </div>
+
+        <div class="ingredient-group">
+          <label>Eyes</label>
+          <div class="carousel-container">
+            <button class="carousel-nav" onclick="window.swapRigElement('eye', -1)">❮</button>
+            <div class="carousel-center">
+              <div class="carousel-view" id="eyeDisplay" onclick="window.toggleColorPicker('eye', event)"></div>
+              <div class="color-electron" id="electron-eye" onclick="window.toggleColorPicker('eye', event)"></div>
+              <div class="electron-popout" id="popout-eye"></div>
+            </div>
+            <button class="carousel-nav" onclick="window.swapRigElement('eye', 1)">❯</button>
+          </div>
+        </div>
+
+        <div class="ingredient-group">
+          <label>Mouth</label>
+          <div class="carousel-container">
+            <button class="carousel-nav" onclick="window.swapRigElement('mouth', -1)">❮</button>
+            <div class="carousel-center">
+              <div class="carousel-view" id="mouthDisplay" onclick="window.toggleColorPicker('mouth', event)"></div>
+              <div class="color-electron" id="electron-mouth" onclick="window.toggleColorPicker('mouth', event)"></div>
+              <div class="electron-popout" id="popout-mouth"></div>
+            </div>
+            <button class="carousel-nav" onclick="window.swapRigElement('mouth', 1)">❯</button>
+          </div>
+        </div>
+
+        <div class="ingredient-group">
+          <label>Arms</label>
+          <div class="carousel-container">
+            <button class="carousel-nav" onclick="window.swapRigElement('arm', -1)">❮</button>
+            <div class="carousel-center">
+              <div class="carousel-view" id="armDisplay" onclick="window.toggleColorPicker('arm', event)"></div>
+              <div class="color-electron" id="electron-arm" onclick="window.toggleColorPicker('arm', event)"></div>
+              <div class="electron-popout" id="popout-arm"></div>
+            </div>
+            <button class="carousel-nav" onclick="window.swapRigElement('arm', 1)">❯</button>
+          </div>
+        </div>
+
+        <div class="ingredient-group">
+          <label>Legs</label>
+          <div class="carousel-container">
+            <button class="carousel-nav" onclick="window.swapRigElement('leg', -1)">❮</button>
+            <div class="carousel-center">
+              <div class="carousel-view" id="legDisplay" onclick="window.toggleColorPicker('leg', event)"></div>
+              <div class="color-electron" id="electron-leg" onclick="window.toggleColorPicker('leg', event)"></div>
+              <div class="electron-popout" id="popout-leg"></div>
+            </div>
+            <button class="carousel-nav" onclick="window.swapRigElement('leg', 1)">❯</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="closet-wrapper">
+        <button id="closetToggleBtn" class="closet-btn" onclick="window.toggleCloset()">Open Closet</button>
+        <div id="closetDrawer" class="closet-drawer">
+          </div>
+      </div>
+      
+      <div class="canvas-actions" id="editActions">
+        <button id="undoBtn" class="undo-btn disabled-btn" onclick="window.undo()">Undo</button>
+        <button class="clear-btn" onclick="window.clearCanvas()">Start Over</button>
+        <button class="bake-btn" onclick="window.togglePreview()">Preview Print</button>
+      </div>
+
+    </div>
+
+    <div class="cutting-board-wrapper">
+      <div class="cutting-board">
+        <canvas id="stickerCanvas"></canvas>
+        
+        <button class="loco-btn" id="scrambleBtn" onclick="window.randomizeCreature()" title="El Collage Loco">
+          <span id="scrambleCounter" class="loco-counter">5</span>
+          <svg viewBox="0 0 40 40">
+            <circle class="loco-shape loco-circle" cx="14" cy="18" r="6" />
+            <rect class="loco-shape loco-rect" x="20" y="8" width="12" height="12" transform="rotate(15 26 14)" />
+            <polygon class="loco-shape loco-poly" points="12,36 22,24 32,36" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="name-group ingredient-group">
+        <label>Name Your Masterpiece</label>
+        <input type="text" id="stickerName" placeholder="e.g. El Jefe" maxlength="18" />
+      </div>
+
+    </div>
+    
+  </div>
+</div>
+
+<div id="previewLightbox" class="lightbox-overlay" style="display: none;">
+  <div class="lightbox-modal">
+    <div class="lightbox-canvas-box">
+      <canvas id="previewCanvas"></canvas>
+    </div>
+    <div class="canvas-actions" id="previewActions">
+      <button class="clear-btn" onclick="window.togglePreview()">Edit Design</button>
+      <button class="bake-btn" onclick="window.sendToKitchen()">Send to Kitchen</button>
+    </div>
+  </div>
+</div>
+
+<div id="startOverLightbox" class="lightbox-overlay" style="display: none;">
+  <div class="prompt-box">
+    <h2>Scrap It?</h2>
+    <p>Are you sure you want to throw this character in the trash and start fresh?</p>
+    <div class="action-row">
+      <button class="control-btn" onclick="window.cancelStartOver()">Nevermind</button>
+      <button class="control-btn trash-btn" onclick="window.confirmStartOver()">Trash It</button>
+    </div>
+  </div>
+</div>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>
