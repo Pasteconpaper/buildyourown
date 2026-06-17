@@ -240,13 +240,32 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
   background-color: #d32f2f !important; 
 }
 
-/* MOBILE TITLE FIX */
-@media (max-width: 600px) {
-  .app-header h1 {
-    font-size: 1.4rem !important;
+/* --- MOBILE RESPONSIVE LAYOUT --- */
+@media (max-width: 800px) {
+  /* Reduce the gap to bring sections closer together */
+  .kitchen-container { flex-direction: column; align-items: center; gap: 25px; }
+  
+  .cutting-board-wrapper { order: 1; width: 100%; max-width: 390px; position: relative; left: auto; transform: none; }
+  .pantry { order: 2; width: 100%; max-width: 390px; height: auto; gap: 0px; justify-content: flex-start; }
+  .pantry-grid { gap: 15px 10px; }
+
+  /* Moves the Undo/Start Over/Preview tools to the TOP of the pantry on mobile! */
+  .canvas-actions#editActions { 
+    order: -1; 
+    margin-bottom: 25px; 
   }
 }
-/* Mobile Canvas Shrink */
+
+@media (max-width: 600px) {
+  /* Fix header sizing */
+  .app-header h1 { font-size: 1.4rem !important; }
+}
+
 @media (max-width: 450px) {
-  .cutting-board { transform: scale(0.85); transform-origin: center top; margin-bottom: 0px; }
+  /* Shrinks the canvas and uses negative margin to swallow the dead space! */
+  .cutting-board { 
+    transform: scale(0.85); 
+    transform-origin: center top; 
+    margin-bottom: -60px; 
+  }
 }
