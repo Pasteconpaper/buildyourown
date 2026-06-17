@@ -29,7 +29,20 @@ body {
 .pantry { width: 380px; display: flex; flex-direction: column; transition: opacity 0.25s ease, filter 0.25s ease; box-sizing: border-box; }
 .pantry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 20px; align-content: space-evenly; flex-grow: 1; padding-bottom: 20px; }
 
-.name-group { width: 100%; text-align: center; margin-top: 25px; }
+.name-group { 
+  width: 100%; 
+  text-align: center; 
+  margin-top: 10px; 
+  position: relative; 
+  z-index: 10; 
+  padding: 15px 0; 
+  background-color: #fdfaf2; 
+  background-image: 
+    radial-gradient(rgba(26, 26, 26, 0.03) 1px, transparent 0),
+    radial-gradient(rgba(26, 26, 26, 0.02) 1px, transparent 0);
+  background-size: 4px 4px, 6px 6px;
+  background-position: 0 0, 2px 2px;
+}
 
 .ingredient-group { margin-bottom: 0; text-align: center; } 
 .ingredient-group label { font-size: 0.95rem; color: #1a1a1a; margin-bottom: 5px; display: block; text-transform: uppercase; font-weight: 900; letter-spacing: 1px; }
