@@ -26,10 +26,25 @@ body {
 .kitchen-container { display: flex; gap: 40px; width: 100%; align-items: stretch; justify-content: center; }
 
 /* PANTRY ENGINE */
-.pantry { width: 380px; display: flex; flex-direction: column; transition: opacity 0.25s ease, filter 0.25s ease; box-sizing: border-box; }
+.pantry { 
+  width: 380px; 
+  display: flex; 
+  flex-direction: column; 
+  transition: opacity 0.25s ease, filter 0.25s ease; 
+  box-sizing: border-box; 
+  position: relative; /* Elevates the element */
+  z-index: 10; /* Forces it above the cutting board */
+}
 .pantry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 20px; align-content: space-evenly; flex-grow: 1; padding-bottom: 20px; }
 
-.name-group { width: 100%; text-align: center; margin-top: 25px; }
+.name-group { 
+  width: 100%; 
+  text-align: center; 
+  margin-top: 25px; 
+  background-color: #fdfaf2; /* Acts as an opaque shield */
+  padding: 15px 0; /* Creates a solid buffer zone */
+  border-radius: 12px; /* Smooths the edges */
+}
 
 .ingredient-group { margin-bottom: 0; text-align: center; } 
 .ingredient-group label { font-size: 0.95rem; color: #1a1a1a; margin-bottom: 5px; display: block; text-transform: uppercase; font-weight: 900; letter-spacing: 1px; }
