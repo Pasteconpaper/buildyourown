@@ -1,6 +1,15 @@
+// --- AUTO-INJECT CSS TO CONTAIN THE NEW MASSIVE CANVAS IN THE UI ---
+const previewStyleFix = document.createElement('style');
+previewStyleFix.innerHTML = `
+  .lightbox-canvas-box .canvas-container { width: 100% !important; height: auto !important; aspect-ratio: 1075 / 1854; position: relative; }
+  .lightbox-canvas-box canvas { width: 100% !important; height: 100% !important; position: absolute !important; top: 0; left: 0; }
+`;
+document.head.appendChild(previewStyleFix);
+
 // 1. GLOBAL APP STATE INITIALIZATION 
 const canvas = new fabric.Canvas('stickerCanvas', { width: 390, height: 450, backgroundColor: 'transparent', preserveObjectStacking: true, allowTouchScrolling: true });
-const previewCanvas = new fabric.Canvas('previewCanvas', { width: 380, height: 570, selection: false });
+// EXACT PRINTER ASPECT RATIO (Target 2150x3708 / 2 = 1075x1854)
+const previewCanvas = new fabric.Canvas('previewCanvas', { width: 1075, height: 1854, selection: false });
 const CX = 195; 
 const CY = 225; 
 
@@ -536,27 +545,22 @@ window.togglePreview = function() {
       let cx = 0, cy = 0; hull.forEach(p => { cx += p.x; cy += p.y; }); cx /= hull.length; cy /= hull.length;
       shield = new fabric.Polygon(hull, { fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, strokeLineJoin: 'round', selectable: false, evented: false });
       
-      // We still generate the guide for the preview, but we hide it for the final export!
       guide = new fabric.Polygon(hull.map(p => { const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY); return { x: cx+(dX/dist)*(dist+12), y: cy+(dY/dist)*(dist+12) }; }), { fill: 'transparent', stroke: '#aaaaaa', strokeWidth: 2, strokeDashArray: [5, 4], strokeLineJoin: 'round', selectable: false, evented: false });
       canvas.add(shield, guide); guide.bringToFront(); shield.sendToBack(); canvas.renderAll();
     }
     
-    // TWEAK: Capture the "clean" image data URL without the dotted line guide!
     if (guide) guide.set('visible', false); 
     canvas.renderAll();
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
     
-    // Put guide back for the preview screen 
     if (guide) guide.set('visible', true); 
     canvas.renderAll();
     
-    // Render the grid using the CLEAN image (no dotted lines)
     renderPreviewSheetGrid(window.cleanPrintDataUrl, maxX - minX, maxY - minY, previewCanvas); 
     
     box.style.display = 'flex';
   } else { 
       box.style.display = 'none'; 
-      // Remove preview artifacts from the main cutting board
       const objects = canvas.getObjects();
       for(let i = objects.length -1; i >= 0; i--) {
           if(!objects[i].rigPart) canvas.remove(objects[i]);
@@ -568,7 +572,9 @@ window.togglePreview = function() {
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     previewCanvasObj.setBackgroundColor('#ffffff', () => {
-      const headerHeight = 95; 
+      
+      // 2.83x UI SCALING FIX FOR 1075x1854 LOGICAL CANVAS
+      const headerHeight = 269; 
       
       const headerRect = new fabric.Rect({ left: 0, top: 0, width: previewCanvasObj.width, height: headerHeight, fill: '#ea7316', selectable: false, isHeaderElement: true }); 
       previewCanvasObj.add(headerRect);
@@ -577,21 +583,21 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
       
       fabric.Image.fromURL(yellowLogoUrl, function(logo) {
           if (logo) { 
-            logo.set({ originX: 'center', originY: 'center', left: previewCanvasObj.width / 2, top: 32, selectable: false, isHeaderElement: true }); 
-            logo.scaleToHeight(45); 
+            logo.set({ originX: 'center', originY: 'center', left: previewCanvasObj.width / 2, top: 91, selectable: false, isHeaderElement: true }); 
+            logo.scaleToHeight(127); 
             previewCanvasObj.add(logo); 
           }
-          const textConfig = { fontSize: 10, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#f9f5bc', selectable: false, top: headerHeight - 20, originY: 'center', isHeaderElement: true };
-          previewCanvasObj.add(new fabric.Text('www.pasteconpaper.com', { ...textConfig, left: 15, originX: 'left' }), new fabric.Text('@pasteconpaper', { ...textConfig, left: previewCanvasObj.width - 15, originX: 'right' }));
+          const textConfig = { fontSize: 28, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#f9f5bc', selectable: false, top: 212, originY: 'center', isHeaderElement: true };
+          previewCanvasObj.add(new fabric.Text('www.pasteconpaper.com', { ...textConfig, left: 42, originX: 'left' }), new fabric.Text('@pasteconpaper', { ...textConfig, left: previewCanvasObj.width - 42, originX: 'right' }));
           previewCanvasObj.renderAll();
       }, { crossOrigin: 'anonymous' });
 
       const cols = 3;
       const rows = 3;
-      const stickerGap = 16;
-      const sideMargin = 20;
-      const topBuffer = 15;
-      const footerBuffer = 75;
+      const stickerGap = 45;
+      const sideMargin = 57;
+      const topBuffer = 42;
+      const footerBuffer = 212;
 
       const usableWidth = previewCanvasObj.width - (sideMargin * 2);
       const gridHeight = previewCanvasObj.height - headerHeight - topBuffer - footerBuffer;
@@ -623,9 +629,9 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                   loadedCount++;
                   
                   if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
-                      const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 11, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
-                      const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 22 : 80, height: nameText.height + 12, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 1.5, rx: 10, ry: 10, originX: 'center', originY: 'center' });
-                      previewCanvasObj.add(new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 38, originX: 'center', originY: 'center', selectable: false }));
+                      const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
+                      const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center', isHeaderElement: true });
+                      previewCanvasObj.add(new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false, isHeaderElement: true }));
                   }
                   previewCanvasObj.renderAll();
               }, { crossOrigin: 'anonymous' });
@@ -634,7 +640,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     });
 }
 
-// --- LOCAL TESTING OUTPUT ENGINE ---
+// --- LOCAL TESTING OUTPUT ENGINE (WITH NATIVE MOBILE SHARE) ---
 window.sendToKitchen = async function() {
     const rawInput = document.getElementById('stickerName').value.trim();
     
@@ -660,32 +666,55 @@ window.sendToKitchen = async function() {
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
+        // Hide header elements for clean export
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
         });
         previewCanvas.renderAll();
 
+        // 300 DPI PRINTER SCALE: 1075x1854 * 2 = 2150x3708 EXPORT RESOLUTION
         const exportedDataUrl = previewCanvas.toDataURL({ 
             format: 'png', 
-            multiplier: 5 
+            multiplier: 2 
         });
 
+        // Restore header elements to the preview screen
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
         });
         previewCanvas.renderAll();
         
-        const ghostLink = document.createElement('a');
-        ghostLink.download = `${rawInput || 'stickeria-masterpiece'}.png`;
-        ghostLink.href = exportedDataUrl;
-        ghostLink.click();
+        // --- Convert Base64 to a Real File Object ---
+        const res = await fetch(exportedDataUrl);
+        const blob = await res.blob();
+        const fileName = `${rawInput || 'stickeria-masterpiece'}.png`;
+        const file = new File([blob], fileName, { type: 'image/png' });
+
+        // --- Trigger Native Mobile Share Sheet OR Desktop Download ---
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            // Mobile: Opens the native iOS/Android share menu (Save Image, Message, etc.)
+            await navigator.share({
+                files: [file],
+                title: fileName
+            });
+        } else {
+            // Desktop Fallback: Clean Object URL download
+            const blobUrl = URL.createObjectURL(blob);
+            const ghostLink = document.createElement('a');
+            ghostLink.download = fileName;
+            ghostLink.href = blobUrl;
+            ghostLink.click();
+            URL.revokeObjectURL(blobUrl); 
+        }
 
         window.togglePreview();
     } catch (e) {
-        console.error("Local client image asset generation failure:", e);
-        alert("Something went wrong compiling the local print graphic asset file.");
+        if (e.name !== 'AbortError') {
+            console.error("Local client image asset generation failure:", e);
+            alert("Something went wrong compiling the local print graphic asset file.");
+        }
     } finally {
         buttons.forEach(btn => { btn.innerText = 'Send to Kitchen'; btn.style.opacity = 1; });
     }
