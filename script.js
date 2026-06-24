@@ -617,6 +617,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
 window.sendToKitchen = async function() {
     const rawInput = document.getElementById('stickerName').value.trim();
     
+    // Check for an empty name block configuration
     if (!rawInput && !window.globalBypassNameSticker) {
         const previewActions = document.getElementById('previewActions');
         if (previewActions) {
@@ -639,8 +640,15 @@ window.sendToKitchen = async function() {
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
-        const exportedDataUrl = previewCanvas.toDataURL({ format: 'png', multiplier: 1 });
+        // Extract print frame sheet from Fabric object 
+        // Request 1 & 2 FIXED: Add temporary transparency and multiply by 5 for 300 DPI high-res output
+        const exportedDataUrl = previewCanvas.toDataURL({ 
+            format: 'png', 
+            backgroundColor: 'transparent',
+            multiplier: 5 
+        });
         
+        // Execute dynamic client browser deployment pipeline
         const ghostLink = document.createElement('a');
         ghostLink.download = `${rawInput || 'stickeria-masterpiece'}.png`;
         ghostLink.href = exportedDataUrl;
@@ -663,11 +671,13 @@ window.abortAndRename = function() {
 
 window.bypassAndPrint = function(bypass) { 
     if (bypass) { window.globalBypassNameSticker = true; } 
+    // Re-render grid layout sheet without name card widget elements
     renderPreviewSheetGrid(window.cleanPrintDataUrl, previewCanvas.width, previewCanvas.height, previewCanvas);
     
+    // Execute compile loop on target container configurations
     setTimeout(() => {
         window.sendToKitchen();
-        window.globalBypassNameSticker = false; 
+        window.globalBypassNameSticker = false; // Reset dynamic lock flags safely
     }, 400);
 }
 
@@ -707,37 +717,44 @@ window.addEventListener('keyup', e => {
 // --- NEW INTRO SCRAMBLE ---
 function playIntroScramble() {
   let flashCount = 0;
-  const maxFlashes = 12; 
-  const speed = 120;     
+  const maxFlashes = 12; // Flashes before settling
+  const speed = 120;     // Speed in ms
   
   const scrambleTimer = setInterval(() => {
+    // 1. Clear current canvas objects
     canvas.getObjects().filter(o => o.rigPart && o.rigPart !== 'accessory').forEach(obj => canvas.remove(obj));
     
+    // 2. Generate a random pool of colors from swatches
     let pool = [...swatches];
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     
+    // 3. Randomize the state without spending Scramble tokens
     Object.keys(indices).forEach((cat, index) => { 
         indices[cat] = Math.floor(Math.random() * lib[cat].length); 
         rigColors[cat] = pool[index]; 
     });
     
+    // 4. Render temporarily to canvas and update UI carousels
     buildCreature(false, false);
     canvas.renderAll();
     
     flashCount++;
 
+    // 5. Check if it's time to stop and reset
     if (flashCount >= maxFlashes) {
       clearInterval(scrambleTimer);
       
+      // Settle back to default setup
       canvas.getObjects().filter(o => o.rigPart && o.rigPart !== 'accessory').forEach(obj => canvas.remove(obj));
       Object.keys(indices).forEach(k => indices[k] = 0);
       rigColors.body = '#ff9800'; rigColors.hair = '#000000'; rigColors.eye = '#000000'; rigColors.mouth = '#000000'; rigColors.arm = '#4caf50'; rigColors.leg = '#4caf50';
       
+      // Build the final initial state
       renderCarousels();
       initColorPickers();
       buildCreature(true, true);
       
-      playPopSound(); 
+      playPopSound(); // Signal to the user that it is ready to use!
     }
   }, speed);
 }
