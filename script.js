@@ -510,7 +510,6 @@ window.confirmStartOver = function() {
   canvas.clear();
   Object.keys(indices).forEach(k => indices[k] = 0);
   
-  // Reset rig colors on Start Over too!
   rigColors.body = '#ff9800'; rigColors.hair = '#000000'; rigColors.eye = '#000000'; rigColors.mouth = '#000000'; rigColors.arm = '#4caf50'; rigColors.leg = '#4caf50';
   
   renderCarousels();
@@ -552,15 +551,22 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     previewCanvasObj.setBackgroundColor('#ffffff', () => {
       const headerHeight = 95; 
-      const headerRect = new fabric.Rect({ left: 0, top: 0, width: previewCanvasObj.width, height: headerHeight, fill: '#ea7316', selectable: false }); 
+      
+      // MAGIC TRICK 1: Tagging the header rectangle
+      const headerRect = new fabric.Rect({ left: 0, top: 0, width: previewCanvasObj.width, height: headerHeight, fill: '#ea7316', selectable: false, isHeaderElement: true }); 
       previewCanvasObj.add(headerRect);
       
       const yellowLogoUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/a8849c53-61d0-40c1-b65f-2877d2b019b1/PasteConPaper_Horizontal-Yellow.png?content-type=image%2Fpng';
       
-      // Fixed CORS crossOrigin property deployment setup configuration for GitHub server loads
       fabric.Image.fromURL(yellowLogoUrl, function(logo) {
-          if (logo) { logo.set({ originX: 'center', originY: 'center', left: previewCanvasObj.width / 2, top: 32, selectable: false }); logo.scaleToHeight(45); previewCanvasObj.add(logo); }
-          const textConfig = { fontSize: 10, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#f9f5bc', selectable: false, top: headerHeight - 20, originY: 'center' };
+          if (logo) { 
+            // MAGIC TRICK 1: Tagging the logo
+            logo.set({ originX: 'center', originY: 'center', left: previewCanvasObj.width / 2, top: 32, selectable: false, isHeaderElement: true }); 
+            logo.scaleToHeight(45); 
+            previewCanvasObj.add(logo); 
+          }
+          // MAGIC TRICK 1: Tagging the text elements
+          const textConfig = { fontSize: 10, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#f9f5bc', selectable: false, top: headerHeight - 20, originY: 'center', isHeaderElement: true };
           previewCanvasObj.add(new fabric.Text('www.pasteconpaper.com', { ...textConfig, left: 15, originX: 'left' }), new fabric.Text('@pasteconpaper', { ...textConfig, left: previewCanvasObj.width - 15, originX: 'right' }));
           previewCanvasObj.renderAll();
       }, { crossOrigin: 'anonymous' });
@@ -617,7 +623,6 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
 window.sendToKitchen = async function() {
     const rawInput = document.getElementById('stickerName').value.trim();
     
-    // Check for an empty name block configuration
     if (!rawInput && !window.globalBypassNameSticker) {
         const previewActions = document.getElementById('previewActions');
         if (previewActions) {
@@ -640,15 +645,25 @@ window.sendToKitchen = async function() {
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
-        // Extract print frame sheet from Fabric object 
-        // Request 1 & 2 FIXED: Add temporary transparency and multiply by 5 for 300 DPI high-res output
+        // MAGIC TRICK 2: Hide the header and erase the background right before the snapshot!
+        previewCanvas.setBackgroundColor(null, () => {});
+        previewCanvas.getObjects().forEach(obj => {
+            if (obj.isHeaderElement) obj.set('visible', false);
+        });
+        previewCanvas.renderAll();
+
         const exportedDataUrl = previewCanvas.toDataURL({ 
             format: 'png', 
-            backgroundColor: 'transparent',
             multiplier: 5 
         });
+
+        // MAGIC TRICK 2: Instantly put the header and background back!
+        previewCanvas.setBackgroundColor('#ffffff', () => {});
+        previewCanvas.getObjects().forEach(obj => {
+            if (obj.isHeaderElement) obj.set('visible', true);
+        });
+        previewCanvas.renderAll();
         
-        // Execute dynamic client browser deployment pipeline
         const ghostLink = document.createElement('a');
         ghostLink.download = `${rawInput || 'stickeria-masterpiece'}.png`;
         ghostLink.href = exportedDataUrl;
@@ -671,13 +686,11 @@ window.abortAndRename = function() {
 
 window.bypassAndPrint = function(bypass) { 
     if (bypass) { window.globalBypassNameSticker = true; } 
-    // Re-render grid layout sheet without name card widget elements
     renderPreviewSheetGrid(window.cleanPrintDataUrl, previewCanvas.width, previewCanvas.height, previewCanvas);
     
-    // Execute compile loop on target container configurations
     setTimeout(() => {
         window.sendToKitchen();
-        window.globalBypassNameSticker = false; // Reset dynamic lock flags safely
+        window.globalBypassNameSticker = false; 
     }, 400);
 }
 
@@ -717,44 +730,37 @@ window.addEventListener('keyup', e => {
 // --- NEW INTRO SCRAMBLE ---
 function playIntroScramble() {
   let flashCount = 0;
-  const maxFlashes = 12; // Flashes before settling
-  const speed = 120;     // Speed in ms
+  const maxFlashes = 12; 
+  const speed = 120;     
   
   const scrambleTimer = setInterval(() => {
-    // 1. Clear current canvas objects
     canvas.getObjects().filter(o => o.rigPart && o.rigPart !== 'accessory').forEach(obj => canvas.remove(obj));
     
-    // 2. Generate a random pool of colors from swatches
     let pool = [...swatches];
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     
-    // 3. Randomize the state without spending Scramble tokens
     Object.keys(indices).forEach((cat, index) => { 
         indices[cat] = Math.floor(Math.random() * lib[cat].length); 
         rigColors[cat] = pool[index]; 
     });
     
-    // 4. Render temporarily to canvas and update UI carousels
     buildCreature(false, false);
     canvas.renderAll();
     
     flashCount++;
 
-    // 5. Check if it's time to stop and reset
     if (flashCount >= maxFlashes) {
       clearInterval(scrambleTimer);
       
-      // Settle back to default setup
       canvas.getObjects().filter(o => o.rigPart && o.rigPart !== 'accessory').forEach(obj => canvas.remove(obj));
       Object.keys(indices).forEach(k => indices[k] = 0);
       rigColors.body = '#ff9800'; rigColors.hair = '#000000'; rigColors.eye = '#000000'; rigColors.mouth = '#000000'; rigColors.arm = '#4caf50'; rigColors.leg = '#4caf50';
       
-      // Build the final initial state
       renderCarousels();
       initColorPickers();
       buildCreature(true, true);
       
-      playPopSound(); // Signal to the user that it is ready to use!
+      playPopSound(); 
     }
   }, speed);
 }
