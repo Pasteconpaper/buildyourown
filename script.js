@@ -687,22 +687,21 @@ window.sendToKitchen = async function() {
         
         // --- GOOGLE DRIVE API UPLOAD LOGIC ---
         
-        // 1. GOOGLE APPS SCRIPT WEB APP URL
         const googleWebAppUrl = "https://script.google.com/macros/s/AKfycbxSS87PwwMCmthMy4GQLhUH6qm7bsA8kcPaEPWFOcWwrru5pz66HvQX6lmAzM7utEVBxg/exec"; 
 
-        // 2. Format the data to pass to your webhook
         const safeName = rawInput.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'test_print';
         const fileName = `${safeName}-${Date.now()}.png`;
         
-        // Use text/plain to easily bypass browser CORS security checks
+        // UPDATED: Added redirect: 'follow' so the browser navigates the Google routing seamlessly
         const response = await fetch(googleWebAppUrl, {
+            redirect: 'follow', 
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain;charset=utf-8'
             },
             body: JSON.stringify({
                 filename: fileName,
-                image: exportedDataUrl.split(',')[1] // Strip the data uri prefix
+                image: exportedDataUrl.split(',')[1] 
             })
         });
 
@@ -711,14 +710,14 @@ window.sendToKitchen = async function() {
         if (result.status === 'success') {
             alert(`Success! Image beamed directly to your Google Drive folder.`);
         } else {
-            throw new Error(result.message || "Drive upload failed.");
+            throw new Error(result.message || "Drive upload failed internally on the Google Server.");
         }
 
         window.togglePreview();
 
     } catch (e) {
         console.error("Drive upload failure:", e);
-        alert(`Something went wrong saving to Google Drive. Check the console for details.`);
+        alert(`Google Drive Upload Failed! Double-check your Apps Script Deployment settings. Make sure it is set to 'Anyone'.`);
     } finally {
         buttons.forEach(btn => { btn.innerText = 'Send to Kitchen'; btn.style.opacity = 1; });
     }
