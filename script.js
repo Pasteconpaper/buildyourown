@@ -639,7 +639,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     }, { crossOrigin: 'anonymous' });
 }
 
-// --- GITHUB API OUTPUT ENGINE (REPO UPLOADER) ---
+// --- GOOGLE DRIVE WEBHOOK OUTPUT ENGINE ---
 window.sendToKitchen = async function() {
     const rawInput = document.getElementById('stickerName').value.trim();
     
@@ -660,7 +660,7 @@ window.sendToKitchen = async function() {
     }
 
     const buttons = document.querySelectorAll('.bake-btn');
-    buttons.forEach(btn => { btn.innerText = "Sending to Repo..."; btn.style.opacity = 0.7; });
+    buttons.forEach(btn => { btn.innerText = "Sending to Drive..."; btn.style.opacity = 0.7; });
 
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
@@ -672,7 +672,7 @@ window.sendToKitchen = async function() {
         });
         previewCanvas.renderAll();
 
-        // Snapshot the high-res image
+        // Snapshot the high-res 300 DPI image
         const exportedDataUrl = previewCanvas.toDataURL({ 
             format: 'png', 
             multiplier: 2 
@@ -685,56 +685,40 @@ window.sendToKitchen = async function() {
         });
         previewCanvas.renderAll();
         
-        // --- GITHUB API UPLOAD LOGIC ---
+        // --- GOOGLE DRIVE API UPLOAD LOGIC ---
         
-        // 1. Check local device memory for the security token
-        let githubToken = localStorage.getItem('stickeria_pat');
-        if (!githubToken) {
-            githubToken = prompt("Enter your GitHub Personal Access Token (PAT) to authorize saving images:");
-            if (!githubToken) throw new Error("Upload aborted: No token provided.");
-            localStorage.setItem('stickeria_pat', githubToken); // Save to device memory
-        }
+        // 1. GOOGLE APPS SCRIPT WEB APP URL
+        const googleWebAppUrl = "https://script.google.com/macros/s/AKfycbxSS87PwwMCmthMy4GQLhUH6qm7bsA8kcPaEPWFOcWwrru5pz66HvQX6lmAzM7utEVBxg/exec"; 
 
-        // 2. Fixed repo variable to route correctly
-        const githubUser = "Pasteconpaper"; 
-        const githubRepo = "buildyourown";     
-        const folderPath = "test-prints";        // Will automatically create this folder
-
-        // 3. Format the data: Remove the standard Base64 prefix so GitHub can read it
-        const base64Data = exportedDataUrl.split(',')[1];
-        
-        // Use a timestamp so file names never overwrite each other
+        // 2. Format the data to pass to your webhook
         const safeName = rawInput.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'test_print';
         const fileName = `${safeName}-${Date.now()}.png`;
-
-        // 4. Beam the file directly to your GitHub repository
-        const response = await fetch(`https://api.github.com/repos/${githubUser}/${githubRepo}/contents/${folderPath}/${fileName}`, {
-            method: 'PUT',
+        
+        // Use text/plain to easily bypass browser CORS security checks
+        const response = await fetch(googleWebAppUrl, {
+            method: 'POST',
             headers: {
-                'Authorization': `token ${githubToken}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain;charset=utf-8'
             },
             body: JSON.stringify({
-                message: `Added new test print: ${fileName}`,
-                content: base64Data
+                filename: fileName,
+                image: exportedDataUrl.split(',')[1] // Strip the data uri prefix
             })
         });
 
-        if (!response.ok) {
-            if (response.status === 401) {
-                localStorage.removeItem('stickeria_pat'); // Erase bad token
-                throw new Error("Invalid GitHub token. Please try again.");
-            }
-            throw new Error(`GitHub rejected the upload: ${response.statusText}`);
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            alert(`Success! Image beamed directly to your Google Drive folder.`);
+        } else {
+            throw new Error(result.message || "Drive upload failed.");
         }
 
-        alert(`Success! Image beamed to the '${folderPath}' folder in your GitHub repo.`);
         window.togglePreview();
 
     } catch (e) {
-        console.error("Repo upload failure:", e);
-        alert(e.message);
+        console.error("Drive upload failure:", e);
+        alert(`Something went wrong saving to Google Drive. Check the console for details.`);
     } finally {
         buttons.forEach(btn => { btn.innerText = 'Send to Kitchen'; btn.style.opacity = 1; });
     }
