@@ -629,8 +629,10 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                     
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
-                        const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center', isHeaderElement: true });
-                        previewCanvasObj.add(new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false, isHeaderElement: true }));
+                        // REMOVED: isHeaderElement: true from the nameBg
+                        const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
+                        // REMOVED: isHeaderElement: true from the Group
+                        previewCanvasObj.add(new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false }));
                     }
                     previewCanvasObj.renderAll();
                 }, { crossOrigin: 'anonymous' });
