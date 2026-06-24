@@ -611,9 +611,12 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     });
 }
 
+// --- LOCAL TESTING OUTPUT ENGINE ---
 window.sendToKitchen = async function() {
     const rawInput = document.getElementById('stickerName').value.trim();
-    if (!rawInput) {
+    
+    // Check for an empty name block configuration
+    if (!rawInput && !window.globalBypassNameSticker) {
         const previewActions = document.getElementById('previewActions');
         if (previewActions) {
             previewActions.innerHTML = `
@@ -630,30 +633,46 @@ window.sendToKitchen = async function() {
     }
 
     const buttons = document.querySelectorAll('.bake-btn');
-    const originalText = buttons.length ? buttons[0].innerText : 'Send to Kitchen';
-    buttons.forEach(btn => { btn.innerText = "Sending..."; btn.style.opacity = 0.7; });
+    buttons.forEach(btn => { btn.innerText = "Exporting..."; btn.style.opacity = 0.7; });
 
     try {
-        const res = await fetch(window.cleanPrintDataUrl);
-        const blob = await res.blob();
-        const formData = new FormData();
-        formData.append('stickerSheet', blob, 'sticker-sheet.png');
-        formData.append('customerName', rawInput);
+        await new Promise(resolve => setTimeout(resolve, 800)); 
 
-        await new Promise(resolve => setTimeout(resolve, 1200)); 
+        // Extract print frame sheet from Fabric object 
+        const exportedDataUrl = previewCanvas.toDataURL({ format: 'png', multiplier: 1 });
+        
+        // Execute dynamic client browser deployment pipeline
+        const ghostLink = document.createElement('a');
+        ghostLink.download = `${rawInput || 'stickeria-masterpiece'}.png`;
+        ghostLink.href = exportedDataUrl;
+        ghostLink.click();
 
-        alert(`Order received for "${rawInput}"! Payload prepped for backend.`);
         window.togglePreview();
     } catch (e) {
-        console.error("Backend transmission failed:", e);
-        alert("Something went wrong packaging the print file.");
+        console.error("Local client image asset generation failure:", e);
+        alert("Something went wrong compiling the local print graphic asset file.");
     } finally {
-        buttons.forEach(btn => { btn.innerText = originalText; btn.style.opacity = 1; });
+        buttons.forEach(btn => { btn.innerText = 'Send to Kitchen'; btn.style.opacity = 1; });
     }
 }
 
-window.abortAndRename = function() { document.getElementById('previewActions').innerHTML = `<button class="clear-btn" onclick="window.togglePreview()">Edit</button><button class="bake-btn" onclick="window.sendToKitchen()">Send</button>`; window.togglePreview(); setTimeout(() => document.getElementById('stickerName').focus(), 300); }
-window.bypassAndPrint = function(bypass) { if (bypass) { window.globalBypassNameSticker = true; } alert("Order received!"); window.togglePreview(); }
+window.abortAndRename = function() { 
+    document.getElementById('previewActions').innerHTML = `<button class="clear-btn" onclick="window.togglePreview()">Edit Design</button><button class="bake-btn" onclick="window.sendToKitchen()">Send to Kitchen</button>`; 
+    window.togglePreview(); 
+    setTimeout(() => document.getElementById('stickerName').focus(), 300); 
+}
+
+window.bypassAndPrint = function(bypass) { 
+    if (bypass) { window.globalBypassNameSticker = true; } 
+    // Re-render grid layout sheet without name card widget elements
+    renderPreviewSheetGrid(window.cleanPrintDataUrl, previewCanvas.width, previewCanvas.height, previewCanvas);
+    
+    // Execute compile loop on target container configurations
+    setTimeout(() => {
+        window.sendToKitchen();
+        window.globalBypassNameSticker = false; // Reset dynamic lock flags safely
+    }, 400);
+}
 
 // KEYBOARD NUDGING & UNDO 
 window.addEventListener('keydown', e => { 
