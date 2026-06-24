@@ -535,16 +535,34 @@ window.togglePreview = function() {
     if (hull.length >= 3) {
       let cx = 0, cy = 0; hull.forEach(p => { cx += p.x; cy += p.y; }); cx /= hull.length; cy /= hull.length;
       shield = new fabric.Polygon(hull, { fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, strokeLineJoin: 'round', selectable: false, evented: false });
+      
+      // We still generate the guide for the preview, but we hide it for the final export!
       guide = new fabric.Polygon(hull.map(p => { const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY); return { x: cx+(dX/dist)*(dist+12), y: cy+(dY/dist)*(dist+12) }; }), { fill: 'transparent', stroke: '#aaaaaa', strokeWidth: 2, strokeDashArray: [5, 4], strokeLineJoin: 'round', selectable: false, evented: false });
       canvas.add(shield, guide); guide.bringToFront(); shield.sendToBack(); canvas.renderAll();
     }
-    const pD = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
-    if (guide) guide.set('visible', false); canvas.renderAll();
+    
+    // TWEAK: Capture the "clean" image data URL without the dotted line guide!
+    if (guide) guide.set('visible', false); 
+    canvas.renderAll();
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
-    if (shield) canvas.remove(shield); if (guide) canvas.remove(guide); canvas.renderAll();
-    renderPreviewSheetGrid(pD, maxX - minX, maxY - minY, previewCanvas); 
+    
+    // Put guide back for the preview screen 
+    if (guide) guide.set('visible', true); 
+    canvas.renderAll();
+    
+    // Render the grid using the CLEAN image (no dotted lines)
+    renderPreviewSheetGrid(window.cleanPrintDataUrl, maxX - minX, maxY - minY, previewCanvas); 
+    
     box.style.display = 'flex';
-  } else { box.style.display = 'none'; canvas.renderAll(); }
+  } else { 
+      box.style.display = 'none'; 
+      // Remove preview artifacts from the main cutting board
+      const objects = canvas.getObjects();
+      for(let i = objects.length -1; i >= 0; i--) {
+          if(!objects[i].rigPart) canvas.remove(objects[i]);
+      }
+      canvas.renderAll(); 
+  }
 }
 
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
@@ -552,7 +570,6 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.setBackgroundColor('#ffffff', () => {
       const headerHeight = 95; 
       
-      // MAGIC TRICK 1: Tagging the header rectangle
       const headerRect = new fabric.Rect({ left: 0, top: 0, width: previewCanvasObj.width, height: headerHeight, fill: '#ea7316', selectable: false, isHeaderElement: true }); 
       previewCanvasObj.add(headerRect);
       
@@ -560,12 +577,10 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
       
       fabric.Image.fromURL(yellowLogoUrl, function(logo) {
           if (logo) { 
-            // MAGIC TRICK 1: Tagging the logo
             logo.set({ originX: 'center', originY: 'center', left: previewCanvasObj.width / 2, top: 32, selectable: false, isHeaderElement: true }); 
             logo.scaleToHeight(45); 
             previewCanvasObj.add(logo); 
           }
-          // MAGIC TRICK 1: Tagging the text elements
           const textConfig = { fontSize: 10, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#f9f5bc', selectable: false, top: headerHeight - 20, originY: 'center', isHeaderElement: true };
           previewCanvasObj.add(new fabric.Text('www.pasteconpaper.com', { ...textConfig, left: 15, originX: 'left' }), new fabric.Text('@pasteconpaper', { ...textConfig, left: previewCanvasObj.width - 15, originX: 'right' }));
           previewCanvasObj.renderAll();
@@ -645,7 +660,6 @@ window.sendToKitchen = async function() {
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
-        // MAGIC TRICK 2: Hide the header and erase the background right before the snapshot!
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
@@ -657,7 +671,6 @@ window.sendToKitchen = async function() {
             multiplier: 5 
         });
 
-        // MAGIC TRICK 2: Instantly put the header and background back!
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
