@@ -571,73 +571,72 @@ window.togglePreview = function() {
 
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
-    previewCanvasObj.setBackgroundColor('#ffffff', () => {
-      
-      // 2.83x UI SCALING FIX FOR 1075x1854 LOGICAL CANVAS
-      const headerHeight = 269; 
-      
-      const headerRect = new fabric.Rect({ left: 0, top: 0, width: previewCanvasObj.width, height: headerHeight, fill: '#ea7316', selectable: false, isHeaderElement: true }); 
-      previewCanvasObj.add(headerRect);
-      
-      const yellowLogoUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/a8849c53-61d0-40c1-b65f-2877d2b019b1/PasteConPaper_Horizontal-Yellow.png?content-type=image%2Fpng';
-      
-      fabric.Image.fromURL(yellowLogoUrl, function(logo) {
-          if (logo) { 
-            logo.set({ originX: 'center', originY: 'center', left: previewCanvasObj.width / 2, top: 91, selectable: false, isHeaderElement: true }); 
-            logo.scaleToHeight(127); 
-            previewCanvasObj.add(logo); 
-          }
-          const textConfig = { fontSize: 28, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#f9f5bc', selectable: false, top: 212, originY: 'center', isHeaderElement: true };
-          previewCanvasObj.add(new fabric.Text('www.pasteconpaper.com', { ...textConfig, left: 42, originX: 'left' }), new fabric.Text('@pasteconpaper', { ...textConfig, left: previewCanvasObj.width - 42, originX: 'right' }));
-          previewCanvasObj.renderAll();
-      }, { crossOrigin: 'anonymous' });
+    
+    const backgroundUrl = 'PasteConPaper_Background.jpg'; 
+    
+    fabric.Image.fromURL(backgroundUrl, function(bgImg) {
+        if (bgImg) { 
+            bgImg.set({ 
+                originX: 'left', 
+                originY: 'top', 
+                left: 0, 
+                top: 0, 
+                scaleX: previewCanvasObj.width / bgImg.width,
+                scaleY: previewCanvasObj.height / bgImg.height,
+                selectable: false, 
+                isHeaderElement: true 
+            }); 
+            previewCanvasObj.add(bgImg); 
+        }
 
-      const cols = 3;
-      const rows = 3;
-      const stickerGap = 45;
-      const sideMargin = 57;
-      const topBuffer = 42;
-      const footerBuffer = 212;
+        const headerHeight = 269; 
+        const cols = 3;
+        const rows = 3;
+        const stickerGap = 45;
+        const sideMargin = 57;
+        const topBuffer = 42;
+        const footerBuffer = 212;
 
-      const usableWidth = previewCanvasObj.width - (sideMargin * 2);
-      const gridHeight = previewCanvasObj.height - headerHeight - topBuffer - footerBuffer;
+        const usableWidth = previewCanvasObj.width - (sideMargin * 2);
+        const gridHeight = previewCanvasObj.height - headerHeight - topBuffer - footerBuffer;
 
-      const maxImgW = (usableWidth - (stickerGap * (cols - 1))) / cols;
-      const maxImgHConstraint = (gridHeight - (stickerGap * (rows - 1))) / rows;
-      
-      const scaleFactor = Math.min(maxImgW / cWidth, maxImgHConstraint / cHeight) * 0.95; 
-      const finalImgW = cWidth * scaleFactor;
-      const finalImgH = cHeight * scaleFactor;
-      
-      const startX = sideMargin + (usableWidth - (cols * finalImgW + (cols - 1) * stickerGap)) / 2;
-      const startY = headerHeight + topBuffer + (gridHeight - (rows * finalImgH + (rows - 1) * stickerGap)) / 2;
+        const maxImgW = (usableWidth - (stickerGap * (cols - 1))) / cols;
+        const maxImgHConstraint = (gridHeight - (stickerGap * (rows - 1))) / rows;
+        
+        const scaleFactor = Math.min(maxImgW / cWidth, maxImgHConstraint / cHeight) * 0.95; 
+        const finalImgW = cWidth * scaleFactor;
+        const finalImgH = cHeight * scaleFactor;
+        
+        const startX = sideMargin + (usableWidth - (cols * finalImgW + (cols - 1) * stickerGap)) / 2;
+        const startY = headerHeight + topBuffer + (gridHeight - (rows * finalImgH + (rows - 1) * stickerGap)) / 2;
 
-      let loadedCount = 0;
-      for(let r = 0; r < rows; r++) {
-          for(let c = 0; c < cols; c++) {
-              fabric.Image.fromURL(srcUrl, function(img) {
-                  img.set({ 
-                      left: startX + c * (finalImgW + stickerGap), 
-                      top: startY + r * (finalImgH + stickerGap), 
-                      scaleX: scaleFactor / 2, 
-                      scaleY: scaleFactor / 2, 
-                      originX: 'left', 
-                      originY: 'top', 
-                      selectable: false 
-                  });
-                  previewCanvasObj.add(img); 
-                  loadedCount++;
-                  
-                  if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
-                      const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
-                      const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center', isHeaderElement: true });
-                      previewCanvasObj.add(new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false, isHeaderElement: true }));
-                  }
-                  previewCanvasObj.renderAll();
-              }, { crossOrigin: 'anonymous' });
-          }
-      }
-    });
+        let loadedCount = 0;
+        
+        for(let r = 0; r < rows; r++) {
+            for(let c = 0; c < cols; c++) {
+                fabric.Image.fromURL(srcUrl, function(img) {
+                    img.set({ 
+                        left: startX + c * (finalImgW + stickerGap), 
+                        top: startY + r * (finalImgH + stickerGap), 
+                        scaleX: scaleFactor / 2, 
+                        scaleY: scaleFactor / 2, 
+                        originX: 'left', 
+                        originY: 'top', 
+                        selectable: false 
+                    });
+                    previewCanvasObj.add(img); 
+                    loadedCount++;
+                    
+                    if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
+                        const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
+                        const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center', isHeaderElement: true });
+                        previewCanvasObj.add(new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false, isHeaderElement: true }));
+                    }
+                    previewCanvasObj.renderAll();
+                }, { crossOrigin: 'anonymous' });
+            }
+        }
+    }, { crossOrigin: 'anonymous' });
 }
 
 // --- LOCAL TESTING OUTPUT ENGINE (WITH NATIVE MOBILE SHARE) ---
@@ -666,41 +665,34 @@ window.sendToKitchen = async function() {
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
-        // Hide header elements for clean export
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
         });
         previewCanvas.renderAll();
 
-        // 300 DPI PRINTER SCALE: 1075x1854 * 2 = 2150x3708 EXPORT RESOLUTION
         const exportedDataUrl = previewCanvas.toDataURL({ 
             format: 'png', 
             multiplier: 2 
         });
 
-        // Restore header elements to the preview screen
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
         });
         previewCanvas.renderAll();
         
-        // --- Convert Base64 to a Real File Object ---
         const res = await fetch(exportedDataUrl);
         const blob = await res.blob();
         const fileName = `${rawInput || 'stickeria-masterpiece'}.png`;
         const file = new File([blob], fileName, { type: 'image/png' });
 
-        // --- Trigger Native Mobile Share Sheet OR Desktop Download ---
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            // Mobile: Opens the native iOS/Android share menu (Save Image, Message, etc.)
             await navigator.share({
                 files: [file],
                 title: fileName
             });
         } else {
-            // Desktop Fallback: Clean Object URL download
             const blobUrl = URL.createObjectURL(blob);
             const ghostLink = document.createElement('a');
             ghostLink.download = fileName;
