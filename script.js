@@ -629,9 +629,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                     
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
-                        // REMOVED: isHeaderElement: true from the nameBg
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
-                        // REMOVED: isHeaderElement: true from the Group
                         previewCanvasObj.add(new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false }));
                     }
                     previewCanvasObj.renderAll();
@@ -641,7 +639,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     }, { crossOrigin: 'anonymous' });
 }
 
-// --- LOCAL TESTING OUTPUT ENGINE (WITH NATIVE MOBILE SHARE) ---
+// --- GITHUB API OUTPUT ENGINE (REPO UPLOADER) ---
 window.sendToKitchen = async function() {
     const rawInput = document.getElementById('stickerName').value.trim();
     
@@ -662,53 +660,81 @@ window.sendToKitchen = async function() {
     }
 
     const buttons = document.querySelectorAll('.bake-btn');
-    buttons.forEach(btn => { btn.innerText = "Exporting..."; btn.style.opacity = 0.7; });
+    buttons.forEach(btn => { btn.innerText = "Sending to Repo..."; btn.style.opacity = 0.7; });
 
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
+        // Hide header elements for clean export
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
         });
         previewCanvas.renderAll();
 
+        // Snapshot the high-res image
         const exportedDataUrl = previewCanvas.toDataURL({ 
             format: 'png', 
             multiplier: 2 
         });
 
+        // Restore header elements to the preview screen
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
         });
         previewCanvas.renderAll();
         
-        const res = await fetch(exportedDataUrl);
-        const blob = await res.blob();
-        const fileName = `${rawInput || 'stickeria-masterpiece'}.png`;
-        const file = new File([blob], fileName, { type: 'image/png' });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: fileName
-            });
-        } else {
-            const blobUrl = URL.createObjectURL(blob);
-            const ghostLink = document.createElement('a');
-            ghostLink.download = fileName;
-            ghostLink.href = blobUrl;
-            ghostLink.click();
-            URL.revokeObjectURL(blobUrl); 
+        // --- GITHUB API UPLOAD LOGIC ---
+        
+        // 1. Check local device memory for the security token
+        let githubToken = localStorage.getItem('stickeria_pat');
+        if (!githubToken) {
+            githubToken = prompt("Enter your GitHub Personal Access Token (PAT) to authorize saving images:");
+            if (!githubToken) throw new Error("Upload aborted: No token provided.");
+            localStorage.setItem('stickeria_pat', githubToken); // Save to device memory
         }
 
+        // 2. Fixed repo variable to route correctly
+        const githubUser = "Pasteconpaper"; 
+        const githubRepo = "buildyourown";     
+        const folderPath = "test-prints";        // Will automatically create this folder
+
+        // 3. Format the data: Remove the standard Base64 prefix so GitHub can read it
+        const base64Data = exportedDataUrl.split(',')[1];
+        
+        // Use a timestamp so file names never overwrite each other
+        const safeName = rawInput.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'test_print';
+        const fileName = `${safeName}-${Date.now()}.png`;
+
+        // 4. Beam the file directly to your GitHub repository
+        const response = await fetch(`https://api.github.com/repos/${githubUser}/${githubRepo}/contents/${folderPath}/${fileName}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${githubToken}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `Added new test print: ${fileName}`,
+                content: base64Data
+            })
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('stickeria_pat'); // Erase bad token
+                throw new Error("Invalid GitHub token. Please try again.");
+            }
+            throw new Error(`GitHub rejected the upload: ${response.statusText}`);
+        }
+
+        alert(`Success! Image beamed to the '${folderPath}' folder in your GitHub repo.`);
         window.togglePreview();
+
     } catch (e) {
-        if (e.name !== 'AbortError') {
-            console.error("Local client image asset generation failure:", e);
-            alert("Something went wrong compiling the local print graphic asset file.");
-        }
+        console.error("Repo upload failure:", e);
+        alert(e.message);
     } finally {
         buttons.forEach(btn => { btn.innerText = 'Send to Kitchen'; btn.style.opacity = 1; });
     }
