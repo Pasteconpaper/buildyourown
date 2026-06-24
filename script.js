@@ -572,7 +572,7 @@ window.togglePreview = function() {
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
-    const backgroundUrl = 'PasteConPaper_Background.jpg'; 
+    const backgroundUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/5001f07a-737b-48eb-9cfd-62bcb5b4cf46/PasteConPaper_Background.jpg?content-type=image%2Fjpeg'; 
     
     fabric.Image.fromURL(backgroundUrl, function(bgImg) {
         if (bgImg) { 
