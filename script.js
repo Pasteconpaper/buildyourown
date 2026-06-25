@@ -559,8 +559,6 @@ window.togglePreview = function() {
     if (guide) guide.set('visible', false); 
     canvas.renderAll();
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
-    
-    // THIS IS THE MATH VARIABLE WE NEED TO SAVE
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
     
@@ -641,7 +639,12 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
-                        previewCanvasObj.add(new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false }));
+                        
+                        // FIX: We tag the entire nameplate group so we can instantly hide it later!
+                        const nameGroup = new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false });
+                        nameGroup.isNameplate = true; 
+                        
+                        previewCanvasObj.add(nameGroup);
                     }
                     previewCanvasObj.renderAll();
                 }, { crossOrigin: 'anonymous' });
@@ -670,38 +673,33 @@ window.sendToKitchen = async function() {
         return;
     }
 
-    // FIX: Only grab the specific upload buttons, not all ".bake-btn" elements!
     const targetBtns = document.querySelectorAll('#previewActions .bake-btn, .skip-btn');
     const originalTexts = Array.from(targetBtns).map(btn => btn.innerText);
     
-    // Start the cycling dots animation strictly on the button that was clicked
     let dotCount = 0;
     const loadingInterval = setInterval(() => {
         dotCount = (dotCount + 1) % 4;
         targetBtns.forEach(btn => { 
             btn.innerText = "Sending" + ".".repeat(dotCount); 
             btn.style.opacity = 0.7; 
-            btn.style.pointerEvents = "none"; // Disable clicking twice
+            btn.style.pointerEvents = "none";
         });
     }, 400);
 
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
-        // Hide header elements for clean transparent export
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
         });
         previewCanvas.renderAll();
 
-        // Snapshot the high-res image
         const exportedDataUrl = previewCanvas.toDataURL({ 
             format: 'png', 
             multiplier: 2 
         });
 
-        // Restore header elements to the preview screen
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
@@ -712,16 +710,13 @@ window.sendToKitchen = async function() {
         const cloudName = "u05fp6zm";
         const uploadPreset = "izbfqsmq"; 
 
-        // Prefixing the base64 data so Cloudinary accepts it
         const base64DataString = "data:image/png;base64," + exportedDataUrl.split(',')[1];
 
-        // Build the payload
         const formData = new FormData();
         formData.append("file", base64DataString);
         formData.append("upload_preset", uploadPreset);
-        formData.append("tags", rawInput.toLowerCase()); // Tags the image in Cloudinary
+        formData.append("tags", rawInput.toLowerCase());
 
-        // Beam it to Cloudinary
         const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
             method: 'POST',
             body: formData
@@ -730,13 +725,8 @@ window.sendToKitchen = async function() {
         const result = await response.json();
 
         if (response.ok) {
-            // SUCCESS! 
             console.log("Image safely stored at:", result.secure_url);
-            
-            // Close the preview modal
             window.togglePreview();
-            
-            // Trigger the new custom Success Modal
             document.getElementById('successLightbox').style.display = 'flex';
         } else {
             throw new Error(result.error ? result.error.message : "Cloudinary rejected the upload.");
@@ -746,7 +736,6 @@ window.sendToKitchen = async function() {
         console.error("Cloudinary upload failure:", e);
         alert(`Upload Failed: ${e.message}`);
     } finally {
-        // Stop the animation and safely reset the buttons to their original text
         clearInterval(loadingInterval);
         targetBtns.forEach((btn, index) => { 
             btn.innerText = originalTexts[index]; 
@@ -762,18 +751,25 @@ window.abortAndRename = function() {
     setTimeout(() => document.getElementById('stickerName').focus(), 300); 
 }
 
-// THIS IS WHERE THE MATH FIX HAPPENED:
+// FIX: Completely bypasses the async canvas redrawing! 
+// It instantly hides the empty nameplate and beams the image immediately.
 window.bypassAndPrint = function(bypass) { 
-    if (bypass) { window.globalBypassNameSticker = true; } 
+    if (bypass) { 
+        window.globalBypassNameSticker = true; 
+        
+        previewCanvas.getObjects().forEach(obj => {
+            if (obj.isNameplate) {
+                obj.set('visible', false);
+            }
+        });
+        previewCanvas.renderAll();
+    } 
     
-    // We pass the saved cleanPrintWidth and Height, NOT previewCanvas.width!
-    renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas);
+    window.sendToKitchen();
     
-    // Bumped the timeout slightly to ensure the images finish drawing before exporting
     setTimeout(() => {
-        window.sendToKitchen();
         window.globalBypassNameSticker = false; 
-    }, 800);
+    }, 1000);
 }
 
 // KEYBOARD NUDGING & UNDO 
