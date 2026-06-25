@@ -6,12 +6,12 @@ previewStyleFix.innerHTML = `
 `;
 document.head.appendChild(previewStyleFix);
 
-// 1. GLOBAL APP STATE INITIALIZATION 
-const canvas = new fabric.Canvas('stickerCanvas', { width: 390, height: 450, backgroundColor: 'transparent', preserveObjectStacking: true, allowTouchScrolling: true });
+// 1. GLOBAL APP STATE INITIALIZATION (UPDATED TO 400x400 SQUARE)
+const canvas = new fabric.Canvas('stickerCanvas', { width: 400, height: 400, backgroundColor: 'transparent', preserveObjectStacking: true, allowTouchScrolling: true });
 // EXACT PRINTER ASPECT RATIO (Target 2150x3708 / 2 = 1075x1854)
 const previewCanvas = new fabric.Canvas('previewCanvas', { width: 1075, height: 1854, selection: false });
-const CX = 195; 
-const CY = 225; 
+const CX = 200; 
+const CY = 200; 
 
 let undoStack = [];
 const MAX_UNDO_STEPS = 30; 
@@ -29,6 +29,11 @@ let globalBypassNameSticker = false;
 let cleanPrintDataUrl = "";
 window.cleanPrintWidth = 0;
 window.cleanPrintHeight = 0;
+
+// Track cutline vectors locally to map onto sheet copies correctly
+window.cutlineHullPoints = [];
+window.cutlineOffsetX = 0;
+window.cutlineOffsetY = 0;
 
 // --- Audio ---
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -151,7 +156,6 @@ window.undo = function() {
   }
 }
 
-// RESTORED: Convex Hull math
 function calculateConvexHullPoints(objects) {
   let coords = [];
   objects.forEach(obj => {
@@ -540,7 +544,7 @@ window.closeSuccessModal = function() {
   document.getElementById('successLightbox').style.display = 'none';
 }
 
-// --- HYBRID EXPORT WITH BAKED CYAN CUTLINE ---
+// --- HYBRID EXPORT PIPELINE WITH CYAN CUTLINE INJECTION ---
 window.togglePreview = async function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
@@ -558,45 +562,43 @@ window.togglePreview = async function() {
         maxY = Math.max(maxY, b.top + b.height);
     });
 
-    // Pad outward far enough to ensure the expanded cyan line is never cropped
+    // Padded safety margin around bounds to avoid stroke cropping
     const pad = 45;
     minX = Math.max(0, minX - pad);
     minY = Math.max(0, minY - pad);
     maxX = Math.min(canvas.width, maxX + pad);
     maxY = Math.min(canvas.height, maxY + pad);
 
-    // 1. Calculate Convex Hull Webbing
-    const hullPoints = calculateConvexHullPoints(activeObjects);
+    // 1. Calculate Convex Hull Webbing Points
+    window.cutlineHullPoints = calculateConvexHullPoints(activeObjects);
     let webShield = null;
     let cyanCutline = null;
 
-    if (hullPoints.length >= 3) {
-        // The solid white structural backing
-        webShield = new fabric.Polygon(hullPoints, { 
+    if (window.cutlineHullPoints.length >= 3) {
+        // Build white connective body layer
+        webShield = new fabric.Polygon(window.cutlineHullPoints, { 
             fill: '#ffffff', 
             stroke: '#ffffff', 
             strokeWidth: 35, 
             strokeLineJoin: 'round', 
             selectable: false, 
-            evented: false,
-            shadow: null
+            evented: false
         });
 
-        // Expand the hull perfectly outward by ~22px to encompass the white stroke
+        // Inflate vector coordinates outward uniformly from centroid to wrap marshmallow stroke
         let cx = 0, cy = 0;
-        hullPoints.forEach(p => { cx += p.x; cy += p.y; });
-        cx /= hullPoints.length; cy /= hullPoints.length;
+        window.cutlineHullPoints.forEach(p => { cx += p.x; cy += p.y; });
+        cx /= window.cutlineHullPoints.length; cy /= window.cutlineHullPoints.length;
         
-        const expandedHull = hullPoints.map(p => {
+        const expandedHullPoints = window.cutlineHullPoints.map(p => {
             const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY);
-            // Push outward from centroid
-            return { x: cx+(dX/dist)*(dist+22), y: cy+(dY/dist)*(dist+22) };
+            return { x: cx + (dX / dist) * (dist + 22), y: cy + (dY / dist) * (dist + 22) };
         });
 
-        // 100% Cyan Dotted Line
-        cyanCutline = new fabric.Polygon(expandedHull, {
+        // Generate Plotter Plot Standard Cyan Dotted Cutline Shape
+        cyanCutline = new fabric.Polygon(expandedHullPoints, {
             fill: 'transparent',
-            stroke: '#00FFFF',
+            stroke: '#00FFFF', // Plotter Standard Cyan
             strokeWidth: 3,
             strokeDashArray: [8, 8],
             strokeLineJoin: 'round',
@@ -605,7 +607,7 @@ window.togglePreview = async function() {
         });
     }
 
-    // 2. Clone and inflate all parts with the "Marshmallow" stroke
+    // 2. Clone and inflate all active elements to map smooth Marshmallow background
     const clonedObjects = await Promise.all(activeObjects.map(obj => {
         return new Promise(resolve => {
             obj.clone((cloned) => {
@@ -635,30 +637,30 @@ window.togglePreview = async function() {
         });
     }));
 
-    // 3. Inject elements to canvas
+    // 3. Temporarily append backing layout systems into main canvas stack
     if (webShield) canvas.add(webShield);
     clonedObjects.forEach(c => canvas.add(c));
     if (cyanCutline) canvas.add(cyanCutline);
     
-    // Sort stack: Webbing (bottom) -> Marshmallows -> Cyan Line -> Colored Parts (top)
+    // Z-Index Sorting: Webbing -> Clones -> Cyan Track Line -> Character Rig
     if (webShield) webShield.sendToBack();
     clonedObjects.forEach(c => c.sendToBack());
     if (cyanCutline) cyanCutline.bringToFront();
     activeObjects.forEach(o => o.bringToFront()); 
     canvas.renderAll();
 
-    // 4. Snap the final contiguous transparent PNG (Cyan cutline is officially baked in!)
+    // 4. Extract single merged image snapshot data containing baked high-visibility Cyan track lines
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
 
-    // 5. Instantly delete the webbing, clones, and cyan line to restore the workspace
+    // 5. Instantly clear temporary backing vectors to restore operational state
     if (webShield) canvas.remove(webShield);
     if (cyanCutline) canvas.remove(cyanCutline);
     clonedObjects.forEach(c => canvas.remove(c));
     canvas.renderAll();
     
-    // Render the grid using the single baked image
+    // Hand over snapshot to multi-slot grid generator
     renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
     
     box.style.display = 'flex';
@@ -667,6 +669,7 @@ window.togglePreview = async function() {
   }
 }
 
+// --- UPDATED VISUAL GRID ENGINE (PROPORTIONAL 1 INCH CAPPING & SHIFTED UP) ---
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
@@ -675,14 +678,10 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     fabric.Image.fromURL(backgroundUrl, function(bgImg) {
         if (bgImg) { 
             bgImg.set({ 
-                originX: 'left', 
-                originY: 'top', 
-                left: 0, 
-                top: 0, 
+                originX: 'left', originY: 'top', left: 0, top: 0, 
                 scaleX: previewCanvasObj.width / bgImg.width,
                 scaleY: previewCanvasObj.height / bgImg.height,
-                selectable: false, 
-                isHeaderElement: true 
+                selectable: false, isHeaderElement: true 
             }); 
             previewCanvasObj.add(bgImg); 
         }
@@ -692,16 +691,33 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         const rows = 3;
         const stickerGap = 45;
         const sideMargin = 57;
-        const topBuffer = 130; 
-        const footerBuffer = 124; 
+        
+        // Balanced layouts: Shift elements up to maximize safety clearance around pill shape
+        const topBuffer = 80;  
+        const footerBuffer = 174; 
 
         const usableWidth = previewCanvasObj.width - (sideMargin * 2);
         const gridHeight = previewCanvasObj.height - headerHeight - topBuffer - footerBuffer;
 
+        // Calculate columns width allocation 
         const maxImgW = (usableWidth - (stickerGap * (cols - 1))) / cols;
         const maxImgHConstraint = (gridHeight - (stickerGap * (rows - 1))) / rows;
         
-        const scaleFactor = Math.min(maxImgW / cWidth, maxImgHConstraint / cHeight) * 0.95; 
+        // --- 1 INCH MAXIMUM PRINT DIMENSION CONSTRAINT ENFORCEMENT ---
+        // Target 1 inch = 300px absolute max constraint in structural file bounds
+        const absoluteOneInchMaxCap = 300; 
+        const gridScaleFactor = Math.min(maxImgW / cWidth, maxImgHConstraint / cHeight);
+        
+        // Compare structural size to find target multiplier, keeping objects proportional
+        let finalScale = gridScaleFactor;
+        if ((cWidth * finalScale) > absoluteOneInchMaxCap || (cHeight * finalScale) > absoluteOneInchMaxCap) {
+            finalScale = Math.min(absoluteOneInchMaxCap / cWidth, absoluteOneInchMaxCap / cHeight);
+        }
+        
+        // Safety buffer reduction coefficient applied to finish target scaling bounds neatly
+        const safetyFactor = 0.95;
+        const scaleFactor = finalScale * safetyFactor;
+
         const finalImgW = cWidth * scaleFactor;
         const finalImgH = cHeight * scaleFactor;
         
@@ -720,7 +736,11 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         scaleY: scaleFactor / 2, 
                         originX: 'left', 
                         originY: 'top', 
-                        selectable: false
+                        selectable: false,
+                        shadow: new fabric.Shadow({
+                            color: 'rgba(26, 26, 26, 0.25)', 
+                            blur: 0, offsetX: 6, offsetY: 6
+                        })
                     });
                     previewCanvasObj.add(img); 
                     loadedCount++;
@@ -732,10 +752,9 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         
                         const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { 
                             left: previewCanvasObj.width / 2, 
-                            top: previewCanvasObj.height - 170, 
-                            originX: 'center', 
-                            originY: 'center', 
-                            selectable: false
+                            top: previewCanvasObj.height - 230, // Adjusted vertically upward to restore canvas balance
+                            originX: 'center', originY: 'center', selectable: false,
+                            shadow: new fabric.Shadow({ color: 'rgba(26, 26, 26, 0.25)', blur: 0, offsetX: 6, offsetY: 6 })
                         });
                         nameGroup.isNameplate = true; 
                         
@@ -795,7 +814,6 @@ window.sendToKitchen = async function() {
             multiplier: 2 
         });
 
-        // Bring the background back for the UI
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
