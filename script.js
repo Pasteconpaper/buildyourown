@@ -151,6 +151,30 @@ window.undo = function() {
   }
 }
 
+// RESTORED: Convex Hull logic to create the structural webbing
+function calculateConvexHullPoints(objects) {
+  let coords = [];
+  objects.forEach(obj => {
+    if (!obj.rigPart) return; 
+    obj.setCoords(); const m = obj.getCoords();
+    coords.push({x:m[0].x, y:m[0].y}, {x:m[1].x, y:m[1].y}, {x:m[2].x, y:m[2].y}, {x:m[3].x, y:m[3].y});
+  });
+  if (coords.length < 3) return coords;
+  let startPoint = coords[0];
+  for (let i = 1; i < coords.length; i++) { if (coords[i].x < startPoint.x) startPoint = coords[i]; }
+  let hull = [], currentPoint = startPoint, nextPoint;
+  do {
+    hull.push(currentPoint); nextPoint = coords[0];
+    for (let i = 1; i < coords.length; i++) {
+      if (coords[i] === currentPoint) continue;
+      let crossProduct = (coords[i].y - currentPoint.y) * (nextPoint.x - currentPoint.x) - (coords[i].x - currentPoint.x) * (nextPoint.y - currentPoint.y);
+      if (nextPoint === currentPoint || crossProduct > 0 || (crossProduct === 0 && (Math.pow(coords[i].x - currentPoint.x, 2) + Math.pow(coords[i].y - currentPoint.y, 2) > Math.pow(nextPoint.x - currentPoint.x, 2) + Math.pow(nextPoint.y - currentPoint.y, 2)))) { nextPoint = coords[i]; }
+    }
+    currentPoint = nextPoint;
+  } while (currentPoint !== startPoint && hull.length < coords.length);
+  return hull;
+}
+
 const lib = {
   body: [
     { id: 'square', svg: '<svg viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" rx="8" fill="{{COLOR}}"/></svg>' },
@@ -516,7 +540,7 @@ window.closeSuccessModal = function() {
   document.getElementById('successLightbox').style.display = 'none';
 }
 
-// --- NEW MARSHMALLOW EXPORT SYSTEM ---
+// --- UPDATED HYBRID EXPORT SYSTEM (Webbing + Marshmallow) ---
 window.togglePreview = async function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
@@ -534,14 +558,28 @@ window.togglePreview = async function() {
         maxY = Math.max(maxY, b.top + b.height);
     });
 
-    // Pad outward by 35px to comfortably fit the massive marshmallow stroke
     const pad = 35;
     minX = Math.max(0, minX - pad);
     minY = Math.max(0, minY - pad);
     maxX = Math.min(canvas.width, maxX + pad);
     maxY = Math.min(canvas.height, maxY + pad);
 
-    // Clone all rig parts and inflate them with a massive white stroke
+    // 1. Calculate and generate the safety "Webbing" (Convex Hull)
+    const hullPoints = calculateConvexHullPoints(activeObjects);
+    let webShield = null;
+    if (hullPoints.length >= 3) {
+        webShield = new fabric.Polygon(hullPoints, { 
+            fill: '#ffffff', 
+            stroke: '#ffffff', 
+            strokeWidth: 35, 
+            strokeLineJoin: 'round', 
+            selectable: false, 
+            evented: false,
+            shadow: null
+        });
+    }
+
+    // 2. Clone and inflate all parts with the "Marshmallow" stroke
     const clonedObjects = await Promise.all(activeObjects.map(obj => {
         return new Promise(resolve => {
             obj.clone((cloned) => {
@@ -558,7 +596,7 @@ window.togglePreview = async function() {
                         item.set({
                             fill: '#ffffff',
                             stroke: '#ffffff',
-                            strokeWidth: (item.strokeWidth || 0) + 35, // Fat Marshmallow contour
+                            strokeWidth: (item.strokeWidth || 0) + 35, 
                             strokeLineJoin: 'round',
                             strokeLineCap: 'round',
                             shadow: null 
@@ -572,16 +610,21 @@ window.togglePreview = async function() {
         });
     }));
 
-    // Add clones to the absolute bottom of the stack
-    clonedObjects.forEach(c => { canvas.add(c); c.sendToBack(); });
+    // 3. Inject both layers to the absolute bottom (Webbing behind Marshmallows)
+    if (webShield) canvas.add(webShield);
+    clonedObjects.forEach(c => canvas.add(c));
+    
+    if (webShield) webShield.sendToBack();
+    clonedObjects.forEach(c => c.sendToBack());
     canvas.renderAll();
 
-    // Snap the final contour-perfect transparent PNG
+    // 4. Snap the final, contiguous transparent PNG
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
 
-    // Instantly delete the clones from the user's workspace
+    // 5. Instantly delete the webbing and clones from the user's workspace
+    if (webShield) canvas.remove(webShield);
     clonedObjects.forEach(c => canvas.remove(c));
     canvas.renderAll();
     
@@ -648,7 +691,6 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         originX: 'left', 
                         originY: 'top', 
                         selectable: false,
-                        // NEW: Brutalist drop shadow to pop the whole sticker
                         shadow: new fabric.Shadow({
                             color: 'rgba(26, 26, 26, 0.3)', 
                             blur: 0,
