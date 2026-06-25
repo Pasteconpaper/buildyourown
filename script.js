@@ -660,7 +660,14 @@ window.sendToKitchen = async function() {
     }
 
     const buttons = document.querySelectorAll('.bake-btn');
-    buttons.forEach(btn => { btn.innerText = "Sending to Cloud..."; btn.style.opacity = 0.7; });
+    buttons.forEach(btn => { btn.style.opacity = 0.7; });
+    
+    // Start the cycling dots animation on the button
+    let dotCount = 0;
+    const loadingInterval = setInterval(() => {
+        dotCount = (dotCount + 1) % 4;
+        buttons.forEach(btn => { btn.innerText = "Send to Kitchen" + ".".repeat(dotCount); });
+    }, 400);
 
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
@@ -689,13 +696,14 @@ window.sendToKitchen = async function() {
         const cloudName = "u05fp6zm";
         const uploadPreset = "izbfqsmq"; 
 
-        // THE FIX: Prefixing the base64 data so Cloudinary accepts it
+        // Prefixing the base64 data so Cloudinary accepts it
         const base64DataString = "data:image/png;base64," + exportedDataUrl.split(',')[1];
 
         // Build the payload
         const formData = new FormData();
         formData.append("file", base64DataString);
         formData.append("upload_preset", uploadPreset);
+        formData.append("tags", rawInput.toLowerCase()); // Tags the image in Cloudinary
 
         // Beam it to Cloudinary
         const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -706,6 +714,7 @@ window.sendToKitchen = async function() {
         const result = await response.json();
 
         if (response.ok) {
+            // SUCCESS! 
             console.log("Image safely stored at:", result.secure_url);
             alert(`Success! Check your Cloudinary Dashboard.`);
         } else {
@@ -718,6 +727,8 @@ window.sendToKitchen = async function() {
         console.error("Cloudinary upload failure:", e);
         alert(`Upload Failed: ${e.message}`);
     } finally {
+        // Stop the animation and reset the button
+        clearInterval(loadingInterval);
         buttons.forEach(btn => { btn.innerText = 'Send to Kitchen'; btn.style.opacity = 1; });
     }
 }
