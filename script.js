@@ -532,6 +532,12 @@ window.cancelStartOver = function() {
   document.getElementById('startOverLightbox').style.display = 'none';
 }
 
+// NEW CLOSER MODAL FUNCTION
+window.closeSuccessModal = function() {
+  playPopSound();
+  document.getElementById('successLightbox').style.display = 'none';
+}
+
 window.togglePreview = function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
@@ -660,13 +666,16 @@ window.sendToKitchen = async function() {
     }
 
     const buttons = document.querySelectorAll('.bake-btn');
-    buttons.forEach(btn => { btn.style.opacity = 0.7; });
     
     // Start the cycling dots animation on the button
     let dotCount = 0;
     const loadingInterval = setInterval(() => {
         dotCount = (dotCount + 1) % 4;
-        buttons.forEach(btn => { btn.innerText = "Send to Kitchen" + ".".repeat(dotCount); });
+        buttons.forEach(btn => { 
+            btn.innerText = "Send to Kitchen" + ".".repeat(dotCount); 
+            btn.style.opacity = 0.7; 
+            btn.style.pointerEvents = "none"; // Disable clicking twice
+        });
     }, 400);
 
     try {
@@ -716,12 +725,15 @@ window.sendToKitchen = async function() {
         if (response.ok) {
             // SUCCESS! 
             console.log("Image safely stored at:", result.secure_url);
-            alert(`Success! Check your Cloudinary Dashboard.`);
+            
+            // Close the preview modal
+            window.togglePreview();
+            
+            // Trigger the new custom Success Modal instead of native browser alert
+            document.getElementById('successLightbox').style.display = 'flex';
         } else {
             throw new Error(result.error ? result.error.message : "Cloudinary rejected the upload.");
         }
-
-        window.togglePreview();
 
     } catch (e) {
         console.error("Cloudinary upload failure:", e);
@@ -729,7 +741,11 @@ window.sendToKitchen = async function() {
     } finally {
         // Stop the animation and reset the button
         clearInterval(loadingInterval);
-        buttons.forEach(btn => { btn.innerText = 'Send to Kitchen'; btn.style.opacity = 1; });
+        buttons.forEach(btn => { 
+            btn.innerText = 'Send to Kitchen'; 
+            btn.style.opacity = 1; 
+            btn.style.pointerEvents = "auto"; 
+        });
     }
 }
 
@@ -834,6 +850,7 @@ window.abortAndRename = abortAndRename;
 window.bypassAndPrint = bypassAndPrint;
 window.addAccessory = addAccessory;
 window.toggleCloset = toggleCloset;
+window.closeSuccessModal = closeSuccessModal;
 
 // --- INIT ---
 initColorPickers(); renderCarousels(); renderCloset(); playIntroScramble();
