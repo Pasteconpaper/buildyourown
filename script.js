@@ -687,7 +687,7 @@ window.sendToKitchen = async function() {
         
         // --- CLOUDINARY API UPLOAD LOGIC ---
         const cloudName = "u05fp6zm";
-        const uploadPreset = "sticker_test"; 
+        const uploadPreset = "izbfqsmq"; 
 
         // THE FIX: Prefixing the base64 data so Cloudinary accepts it
         const base64DataString = "data:image/png;base64," + exportedDataUrl.split(',')[1];
