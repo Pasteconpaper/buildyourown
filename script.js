@@ -551,7 +551,7 @@ window.togglePreview = function() {
     
     if (guide) guide.set('visible', false); 
     canvas.renderAll();
-    window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
+    window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 0.5 });
     
     if (guide) guide.set('visible', true); 
     canvas.renderAll();
