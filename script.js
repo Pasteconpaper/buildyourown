@@ -687,8 +687,8 @@ window.sendToKitchen = async function() {
         
         // --- GOOGLE DRIVE API UPLOAD LOGIC ---
         
-        const googleWebAppUrl = "https://script.google.com/macros/s/AKfycbxSS87PwwMCmthMy4GQLhUH6qm7bsA8kcPaEPWFOcWwrru5pz66HvQX6lmAzM7utEVBxg/exec"; 
-
+        const googleWebAppUrl = "https://script.google.com/macros/s/.../exec";
+      
         const safeName = rawInput.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'test_print';
         const fileName = `${safeName}-${Date.now()}.png`;
         
