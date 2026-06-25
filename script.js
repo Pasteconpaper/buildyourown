@@ -559,6 +559,8 @@ window.togglePreview = function() {
     if (guide) guide.set('visible', false); 
     canvas.renderAll();
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
+    
+    // THIS IS THE MATH VARIABLE WE NEED TO SAVE
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
     
@@ -760,14 +762,18 @@ window.abortAndRename = function() {
     setTimeout(() => document.getElementById('stickerName').focus(), 300); 
 }
 
+// THIS IS WHERE THE MATH FIX HAPPENED:
 window.bypassAndPrint = function(bypass) { 
     if (bypass) { window.globalBypassNameSticker = true; } 
+    
+    // We pass the saved cleanPrintWidth and Height, NOT previewCanvas.width!
     renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas);
     
+    // Bumped the timeout slightly to ensure the images finish drawing before exporting
     setTimeout(() => {
         window.sendToKitchen();
         window.globalBypassNameSticker = false; 
-    }, 400);
+    }, 800);
 }
 
 // KEYBOARD NUDGING & UNDO 
