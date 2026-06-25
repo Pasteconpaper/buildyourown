@@ -642,8 +642,11 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         
-                        // BALANCING TWEAK: Changed height offset from -108 to -170 to pull nameplate up
-                        const nameGroup = new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 170, originX: 'center', originY: 'center', selectable: false });
+                        // NEW: Outer white "die-cut" border for the nameplate
+                        const nameShield = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, rx: 28, ry: 28, originX: 'center', originY: 'center' });
+                        
+                        // BALANCING TWEAK: Changed height offset from -108 to -170 to pull nameplate up, and added the nameShield into the group
+                        const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 170, originX: 'center', originY: 'center', selectable: false });
                         nameGroup.isNameplate = true; 
                         
                         previewCanvasObj.add(nameGroup);
