@@ -687,8 +687,8 @@ window.sendToKitchen = async function() {
         
         // --- CLOUDINARY API UPLOAD LOGIC ---
         // 1. UPDATE THESE TWO VARIABLES:
-        const cloudName = "izbfqsmq";
-        const uploadPreset = "sticker_test"; 
+        const cloudName = "30d0e658-1674-4709-b097-a9ec8f4321fc";
+        const uploadPreset = "izbfqsmq"; 
 
         // 2. Build the payload
         const formData = new FormData();
