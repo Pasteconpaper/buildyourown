@@ -686,16 +686,18 @@ window.sendToKitchen = async function() {
         previewCanvas.renderAll();
         
         // --- CLOUDINARY API UPLOAD LOGIC ---
-        // 1. UPDATE THESE TWO VARIABLES:
-        const cloudName = "30d0e658-1674-4709-b097-a9ec8f4321fc";
-        const uploadPreset = "izbfqsmq"; 
+        const cloudName = "u05fp6zm";
+        const uploadPreset = "sticker_test"; 
 
-        // 2. Build the payload
+        // THE FIX: Prefixing the base64 data so Cloudinary accepts it
+        const base64DataString = "data:image/png;base64," + exportedDataUrl.split(',')[1];
+
+        // Build the payload
         const formData = new FormData();
-        formData.append("file", exportedDataUrl);
+        formData.append("file", base64DataString);
         formData.append("upload_preset", uploadPreset);
 
-        // 3. Beam it to Cloudinary
+        // Beam it to Cloudinary
         const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
             method: 'POST',
             body: formData
@@ -704,7 +706,6 @@ window.sendToKitchen = async function() {
         const result = await response.json();
 
         if (response.ok) {
-            // SUCCESS! 
             console.log("Image safely stored at:", result.secure_url);
             alert(`Success! Check your Cloudinary Dashboard.`);
         } else {
