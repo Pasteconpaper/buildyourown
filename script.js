@@ -532,7 +532,6 @@ window.cancelStartOver = function() {
   document.getElementById('startOverLightbox').style.display = 'none';
 }
 
-// NEW CLOSER MODAL FUNCTION
 window.closeSuccessModal = function() {
   playPopSound();
   document.getElementById('successLightbox').style.display = 'none';
@@ -665,14 +664,16 @@ window.sendToKitchen = async function() {
         return;
     }
 
-    const buttons = document.querySelectorAll('.bake-btn');
+    // FIX: Only grab the specific upload buttons, not all ".bake-btn" elements!
+    const targetBtns = document.querySelectorAll('#previewActions .bake-btn, .skip-btn');
+    const originalTexts = Array.from(targetBtns).map(btn => btn.innerText);
     
-    // Start the cycling dots animation on the button
+    // Start the cycling dots animation strictly on the button that was clicked
     let dotCount = 0;
     const loadingInterval = setInterval(() => {
         dotCount = (dotCount + 1) % 4;
-        buttons.forEach(btn => { 
-            btn.innerText = "Send to Kitchen" + ".".repeat(dotCount); 
+        targetBtns.forEach(btn => { 
+            btn.innerText = "Sending" + ".".repeat(dotCount); 
             btn.style.opacity = 0.7; 
             btn.style.pointerEvents = "none"; // Disable clicking twice
         });
@@ -729,7 +730,7 @@ window.sendToKitchen = async function() {
             // Close the preview modal
             window.togglePreview();
             
-            // Trigger the new custom Success Modal instead of native browser alert
+            // Trigger the new custom Success Modal
             document.getElementById('successLightbox').style.display = 'flex';
         } else {
             throw new Error(result.error ? result.error.message : "Cloudinary rejected the upload.");
@@ -739,10 +740,10 @@ window.sendToKitchen = async function() {
         console.error("Cloudinary upload failure:", e);
         alert(`Upload Failed: ${e.message}`);
     } finally {
-        // Stop the animation and reset the button
+        // Stop the animation and safely reset the buttons to their original text
         clearInterval(loadingInterval);
-        buttons.forEach(btn => { 
-            btn.innerText = 'Send to Kitchen'; 
+        targetBtns.forEach((btn, index) => { 
+            btn.innerText = originalTexts[index]; 
             btn.style.opacity = 1; 
             btn.style.pointerEvents = "auto"; 
         });
