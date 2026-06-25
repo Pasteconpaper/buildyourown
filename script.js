@@ -151,29 +151,6 @@ window.undo = function() {
   }
 }
 
-function calculateConvexHullPoints(objects) {
-  let coords = [];
-  objects.forEach(obj => {
-    if (!obj.rigPart) return; 
-    obj.setCoords(); const m = obj.getCoords();
-    coords.push({x:m[0].x, y:m[0].y}, {x:m[1].x, y:m[1].y}, {x:m[2].x, y:m[2].y}, {x:m[3].x, y:m[3].y});
-  });
-  if (coords.length < 3) return coords;
-  let startPoint = coords[0];
-  for (let i = 1; i < coords.length; i++) { if (coords[i].x < startPoint.x) startPoint = coords[i]; }
-  let hull = [], currentPoint = startPoint, nextPoint;
-  do {
-    hull.push(currentPoint); nextPoint = coords[0];
-    for (let i = 1; i < coords.length; i++) {
-      if (coords[i] === currentPoint) continue;
-      let crossProduct = (coords[i].y - currentPoint.y) * (nextPoint.x - currentPoint.x) - (coords[i].x - currentPoint.x) * (nextPoint.y - currentPoint.y);
-      if (nextPoint === currentPoint || crossProduct > 0 || (crossProduct === 0 && (Math.pow(coords[i].x - currentPoint.x, 2) + Math.pow(coords[i].y - currentPoint.y, 2) > Math.pow(nextPoint.x - currentPoint.x, 2) + Math.pow(nextPoint.y - currentPoint.y, 2)))) { nextPoint = coords[i]; }
-    }
-    currentPoint = nextPoint;
-  } while (currentPoint !== startPoint && hull.length < coords.length);
-  return hull;
-}
-
 const lib = {
   body: [
     { id: 'square', svg: '<svg viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" rx="8" fill="{{COLOR}}"/></svg>' },
@@ -539,30 +516,73 @@ window.closeSuccessModal = function() {
   document.getElementById('successLightbox').style.display = 'none';
 }
 
-window.togglePreview = function() {
+// --- NEW MARSHMALLOW EXPORT SYSTEM ---
+window.togglePreview = async function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
-    const activeObjects = canvas.getObjects().filter(o => o.rigPart); if (activeObjects.length === 0) return;
-    canvas.discardActiveObject(); window.globalSelectedName = document.getElementById('stickerName').value.trim();
+    const activeObjects = canvas.getObjects().filter(o => o.rigPart);
+    if (activeObjects.length === 0) return;
+    canvas.discardActiveObject();
+    window.globalSelectedName = document.getElementById('stickerName').value.trim();
+
     let minX = 9999, minY = 9999, maxX = -9999, maxY = -9999;
-    activeObjects.forEach(o => { const b = o.getBoundingRect(); minX = Math.min(minX, b.left); minY = Math.min(minY, b.top); maxX = Math.max(maxX, b.left + b.width); maxY = Math.max(maxY, b.top + b.height); });
-    const pad = 25; minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad); maxX = Math.min(canvas.width, maxX + pad); maxY = Math.min(canvas.height, maxY + pad);
-    const hull = calculateConvexHullPoints(activeObjects); let shield = null, guide = null;
-    if (hull.length >= 3) {
-      let cx = 0, cy = 0; hull.forEach(p => { cx += p.x; cy += p.y; }); cx /= hull.length; cy /= hull.length;
-      shield = new fabric.Polygon(hull, { fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, strokeLineJoin: 'round', selectable: false, evented: false });
-      
-      guide = new fabric.Polygon(hull.map(p => { const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY); return { x: cx+(dX/dist)*(dist+12), y: cy+(dY/dist)*(dist+12) }; }), { fill: 'transparent', stroke: '#aaaaaa', strokeWidth: 2, strokeDashArray: [5, 4], strokeLineJoin: 'round', selectable: false, evented: false });
-      canvas.add(shield, guide); guide.bringToFront(); shield.sendToBack(); canvas.renderAll();
-    }
-    
-    if (guide) guide.set('visible', false); 
+    activeObjects.forEach(o => {
+        const b = o.getBoundingRect();
+        minX = Math.min(minX, b.left);
+        minY = Math.min(minY, b.top);
+        maxX = Math.max(maxX, b.left + b.width);
+        maxY = Math.max(maxY, b.top + b.height);
+    });
+
+    // Pad outward by 35px to comfortably fit the massive marshmallow stroke
+    const pad = 35;
+    minX = Math.max(0, minX - pad);
+    minY = Math.max(0, minY - pad);
+    maxX = Math.min(canvas.width, maxX + pad);
+    maxY = Math.min(canvas.height, maxY + pad);
+
+    // Clone all rig parts and inflate them with a massive white stroke
+    const clonedObjects = await Promise.all(activeObjects.map(obj => {
+        return new Promise(resolve => {
+            obj.clone((cloned) => {
+                cloned.set({
+                    left: obj.left, top: obj.top,
+                    scaleX: obj.scaleX, scaleY: obj.scaleY,
+                    angle: obj.angle, originX: obj.originX, originY: obj.originY
+                });
+
+                const makeFat = (item) => {
+                    if (item.type === 'group') {
+                        item.getObjects().forEach(o => makeFat(o));
+                    } else {
+                        item.set({
+                            fill: '#ffffff',
+                            stroke: '#ffffff',
+                            strokeWidth: (item.strokeWidth || 0) + 35, // Fat Marshmallow contour
+                            strokeLineJoin: 'round',
+                            strokeLineCap: 'round',
+                            shadow: null 
+                        });
+                    }
+                };
+                
+                makeFat(cloned);
+                resolve(cloned);
+            });
+        });
+    }));
+
+    // Add clones to the absolute bottom of the stack
+    clonedObjects.forEach(c => { canvas.add(c); c.sendToBack(); });
     canvas.renderAll();
+
+    // Snap the final contour-perfect transparent PNG
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
-    
-    if (guide) guide.set('visible', true); 
+
+    // Instantly delete the clones from the user's workspace
+    clonedObjects.forEach(c => canvas.remove(c));
     canvas.renderAll();
     
     renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
@@ -570,11 +590,6 @@ window.togglePreview = function() {
     box.style.display = 'flex';
   } else { 
       box.style.display = 'none'; 
-      const objects = canvas.getObjects();
-      for(let i = objects.length -1; i >= 0; i--) {
-          if(!objects[i].rigPart) canvas.remove(objects[i]);
-      }
-      canvas.renderAll(); 
   }
 }
 
@@ -604,7 +619,6 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         const stickerGap = 45;
         const sideMargin = 57;
         
-        // BALANCING TWEAK: Increased top buffer, decreased footer buffer to drop characters down
         const topBuffer = 130; 
         const footerBuffer = 124; 
 
@@ -633,7 +647,14 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         scaleY: scaleFactor / 2, 
                         originX: 'left', 
                         originY: 'top', 
-                        selectable: false 
+                        selectable: false,
+                        // NEW: Brutalist drop shadow to pop the whole sticker
+                        shadow: new fabric.Shadow({
+                            color: 'rgba(26, 26, 26, 0.3)', 
+                            blur: 0,
+                            offsetX: 6,
+                            offsetY: 6
+                        })
                     });
                     previewCanvasObj.add(img); 
                     loadedCount++;
@@ -641,12 +662,16 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
-                        
-                        // NEW: Outer white "die-cut" border for the nameplate
                         const nameShield = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         
-                        // BALANCING TWEAK: Changed height offset from -108 to -170 to pull nameplate up, and added the nameShield into the group
-                        const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 170, originX: 'center', originY: 'center', selectable: false });
+                        const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { 
+                            left: previewCanvasObj.width / 2, 
+                            top: previewCanvasObj.height - 170, 
+                            originX: 'center', 
+                            originY: 'center', 
+                            selectable: false,
+                            shadow: new fabric.Shadow({ color: 'rgba(26, 26, 26, 0.3)', blur: 0, offsetX: 6, offsetY: 6 })
+                        });
                         nameGroup.isNameplate = true; 
                         
                         previewCanvasObj.add(nameGroup);
