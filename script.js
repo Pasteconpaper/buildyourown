@@ -27,7 +27,6 @@ let activePopout = null;
 let globalSelectedName = ""; 
 let globalBypassNameSticker = false;
 let cleanPrintDataUrl = "";
-let cutlineHullPoints = [];
 window.cleanPrintWidth = 0;
 window.cleanPrintHeight = 0;
 
@@ -541,7 +540,7 @@ window.closeSuccessModal = function() {
   document.getElementById('successLightbox').style.display = 'none';
 }
 
-// --- UPDATED HYBRID EXPORT SYSTEM (Webbing + Marshmallow + Render Cutline) ---
+// --- HYBRID EXPORT WITH BAKED CYAN CUTLINE ---
 window.togglePreview = async function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
@@ -559,17 +558,21 @@ window.togglePreview = async function() {
         maxY = Math.max(maxY, b.top + b.height);
     });
 
-    const pad = 35;
+    // Pad outward far enough to ensure the expanded cyan line is never cropped
+    const pad = 45;
     minX = Math.max(0, minX - pad);
     minY = Math.max(0, minY - pad);
     maxX = Math.min(canvas.width, maxX + pad);
     maxY = Math.min(canvas.height, maxY + pad);
 
-    // Calculate webbing hull points to pass onto the render grid
-    window.cutlineHullPoints = calculateConvexHullPoints(activeObjects);
+    // 1. Calculate Convex Hull Webbing
+    const hullPoints = calculateConvexHullPoints(activeObjects);
     let webShield = null;
-    if (window.cutlineHullPoints.length >= 3) {
-        webShield = new fabric.Polygon(window.cutlineHullPoints, { 
+    let cyanCutline = null;
+
+    if (hullPoints.length >= 3) {
+        // The solid white structural backing
+        webShield = new fabric.Polygon(hullPoints, { 
             fill: '#ffffff', 
             stroke: '#ffffff', 
             strokeWidth: 35, 
@@ -578,8 +581,31 @@ window.togglePreview = async function() {
             evented: false,
             shadow: null
         });
+
+        // Expand the hull perfectly outward by ~22px to encompass the white stroke
+        let cx = 0, cy = 0;
+        hullPoints.forEach(p => { cx += p.x; cy += p.y; });
+        cx /= hullPoints.length; cy /= hullPoints.length;
+        
+        const expandedHull = hullPoints.map(p => {
+            const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY);
+            // Push outward from centroid
+            return { x: cx+(dX/dist)*(dist+22), y: cy+(dY/dist)*(dist+22) };
+        });
+
+        // 100% Cyan Dotted Line
+        cyanCutline = new fabric.Polygon(expandedHull, {
+            fill: 'transparent',
+            stroke: '#00FFFF',
+            strokeWidth: 3,
+            strokeDashArray: [8, 8],
+            strokeLineJoin: 'round',
+            selectable: false,
+            evented: false
+        });
     }
 
+    // 2. Clone and inflate all parts with the "Marshmallow" stroke
     const clonedObjects = await Promise.all(activeObjects.map(obj => {
         return new Promise(resolve => {
             obj.clone((cloned) => {
@@ -603,33 +629,36 @@ window.togglePreview = async function() {
                         });
                     }
                 };
-                
                 makeFat(cloned);
                 resolve(cloned);
             });
         });
     }));
 
+    // 3. Inject elements to canvas
     if (webShield) canvas.add(webShield);
     clonedObjects.forEach(c => canvas.add(c));
+    if (cyanCutline) canvas.add(cyanCutline);
     
+    // Sort stack: Webbing (bottom) -> Marshmallows -> Cyan Line -> Colored Parts (top)
     if (webShield) webShield.sendToBack();
     clonedObjects.forEach(c => c.sendToBack());
+    if (cyanCutline) cyanCutline.bringToFront();
+    activeObjects.forEach(o => o.bringToFront()); 
     canvas.renderAll();
 
-    // Export the master transparent PNG image containing just the white background and colored figure
+    // 4. Snap the final contiguous transparent PNG (Cyan cutline is officially baked in!)
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
-    
-    // Calculate Webbing Offsets to pass the dotted line guide onto the preview canvas
-    window.cutlineOffsetX = minX;
-    window.cutlineOffsetY = minY;
 
+    // 5. Instantly delete the webbing, clones, and cyan line to restore the workspace
     if (webShield) canvas.remove(webShield);
+    if (cyanCutline) canvas.remove(cyanCutline);
     clonedObjects.forEach(c => canvas.remove(c));
     canvas.renderAll();
     
+    // Render the grid using the single baked image
     renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
     
     box.style.display = 'flex';
@@ -683,30 +712,6 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         
         for(let r = 0; r < rows; r++) {
             for(let c = 0; c < cols; c++) {
-                
-                // Add the Visual Dotted Cutline indicator based on the Webbing polygon
-                if (window.cutlineHullPoints && window.cutlineHullPoints.length >= 3) {
-                    const adjustedPoints = window.cutlineHullPoints.map(p => ({
-                        x: (p.x - window.cutlineOffsetX) * (scaleFactor / 2),
-                        y: (p.y - window.cutlineOffsetY) * (scaleFactor / 2)
-                    }));
-                    
-                    const visualDottedLine = new fabric.Polygon(adjustedPoints, {
-                        fill: 'transparent',
-                        stroke: '#aaaaaa',
-                        strokeWidth: 2,
-                        strokeDashArray: [8, 8],
-                        strokeLineJoin: 'round',
-                        left: startX + c * (finalImgW + stickerGap),
-                        top: startY + r * (finalImgH + stickerGap),
-                        originX: 'left',
-                        originY: 'top',
-                        selectable: false,
-                        isVisualCutline: true // Key property for toggling visibility
-                    });
-                    previewCanvasObj.add(visualDottedLine);
-                }
-
                 fabric.Image.fromURL(srcUrl, function(img) {
                     img.set({ 
                         left: startX + c * (finalImgW + stickerGap), 
@@ -718,12 +723,6 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         selectable: false
                     });
                     previewCanvasObj.add(img); 
-                    
-                    // Bring cutlines to very top so they are always seen
-                    previewCanvasObj.getObjects().forEach(o => {
-                        if (o.isVisualCutline) o.bringToFront();
-                    });
-
                     loadedCount++;
                     
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
@@ -788,8 +787,6 @@ window.sendToKitchen = async function() {
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
-            // Hide the dotted cutline so Liene printer sees a pure white boundary
-            if (obj.isVisualCutline) obj.set('visible', false);
         });
         previewCanvas.renderAll();
 
@@ -798,11 +795,10 @@ window.sendToKitchen = async function() {
             multiplier: 2 
         });
 
-        // Bring it all back for the UI
+        // Bring the background back for the UI
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
-            if (obj.isVisualCutline) obj.set('visible', true);
         });
         previewCanvas.renderAll();
         
@@ -854,7 +850,6 @@ window.abortAndRename = function() {
 window.bypassAndPrint = function(bypass) { 
     if (bypass) { 
         window.globalBypassNameSticker = true; 
-        
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isNameplate) {
                 obj.set('visible', false);
