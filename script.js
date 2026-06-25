@@ -667,7 +667,6 @@ window.togglePreview = async function() {
   }
 }
 
-// --- UPDATED LAYOUT LOGIC (Visual Rebalance) ---
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
@@ -693,11 +692,8 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         const rows = 3;
         const stickerGap = 45;
         const sideMargin = 57;
-        
-        // --- LAYOUT UPDATE: Adjusted Buffers to Move Things UP ---
-        // Was topBuffer: 130, footerBuffer: 124
-        const topBuffer = 80;  // Reduced to bring things up
-        const footerBuffer = 174; // Increased to add space at the bottom
+        const topBuffer = 130; 
+        const footerBuffer = 124; 
 
         const usableWidth = previewCanvasObj.width - (sideMargin * 2);
         const gridHeight = previewCanvasObj.height - headerHeight - topBuffer - footerBuffer;
@@ -716,60 +712,19 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         
         for(let r = 0; r < rows; r++) {
             for(let c = 0; c < cols; c++) {
-                
-                // --- Add the Visual Dotted Cutline indicator (from window state) ---
-                if (window.cutlineHullPoints && window.cutlineHullPoints.length >= 3) {
-                    const adjustedPoints = window.cutlineHullPoints.map(p => ({
-                        x: (p.x - window.cutlineOffsetX) * (scaleFactor / 2),
-                        y: (p.y - window.cutlineOffsetY) * (scaleFactor / 2)
-                    }));
-                    
-                    const visualDottedLine = new fabric.Polygon(adjustedPoints, {
-                        fill: 'transparent',
-                        stroke: '#aaaaaa', // Gray guide on screen
-                        strokeWidth: 2,
-                        strokeDashArray: [8, 8],
-                        strokeLineJoin: 'round',
-                        // --- LAYOUT UPDATE: New Vertical Position ---
-                        left: startX + c * (finalImgW + stickerGap),
-                        top: startY + r * (finalImgH + stickerGap),
-                        originX: 'left',
-                        originY: 'top',
-                        selectable: false,
-                        isVisualCutline: true // Key for toggling visibility
-                    });
-                    previewCanvasObj.add(visualDottedLine);
-                }
-
-                // --- Load and scale the baked sticker image (colored parts on white) ---
                 fabric.Image.fromURL(srcUrl, function(img) {
                     img.set({ 
-                        // --- LAYOUT UPDATE: New Vertical Position ---
                         left: startX + c * (finalImgW + stickerGap), 
                         top: startY + r * (finalImgH + stickerGap), 
                         scaleX: scaleFactor / 2, 
                         scaleY: scaleFactor / 2, 
                         originX: 'left', 
                         originY: 'top', 
-                        selectable: false,
-                        // Maintain original brutalist drop shadow for depth
-                        shadow: new fabric.Shadow({
-                            color: 'rgba(26, 26, 26, 0.3)', 
-                            blur: 0,
-                            offsetX: 6,
-                            offsetY: 6
-                        })
+                        selectable: false
                     });
                     previewCanvasObj.add(img); 
-                    
-                    // Bring cutlines to top
-                    previewCanvasObj.getObjects().forEach(o => {
-                        if (o.isVisualCutline) o.bringToFront();
-                    });
-
                     loadedCount++;
                     
-                    // --- Build the floating name plate (moved up) ---
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
@@ -777,12 +732,10 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         
                         const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { 
                             left: previewCanvasObj.width / 2, 
-                            // --- LAYOUT UPDATE: Positioned higher (was -170) ---
-                            top: previewCanvasObj.height - 230, // Adjusted vertical position
+                            top: previewCanvasObj.height - 170, 
                             originX: 'center', 
                             originY: 'center', 
-                            selectable: false,
-                            shadow: new fabric.Shadow({ color: 'rgba(26, 26, 26, 0.3)', blur: 0, offsetX: 6, offsetY: 6 })
+                            selectable: false
                         });
                         nameGroup.isNameplate = true; 
                         
