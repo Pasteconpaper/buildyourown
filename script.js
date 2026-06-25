@@ -603,8 +603,10 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         const rows = 3;
         const stickerGap = 45;
         const sideMargin = 57;
-        const topBuffer = 42;
-        const footerBuffer = 212;
+        
+        // BALANCING TWEAK: Increased top buffer, decreased footer buffer to drop characters down
+        const topBuffer = 130; 
+        const footerBuffer = 124; 
 
         const usableWidth = previewCanvasObj.width - (sideMargin * 2);
         const gridHeight = previewCanvasObj.height - headerHeight - topBuffer - footerBuffer;
@@ -640,8 +642,8 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         
-                        // FIX: We tag the entire nameplate group so we can instantly hide it later!
-                        const nameGroup = new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 108, originX: 'center', originY: 'center', selectable: false });
+                        // BALANCING TWEAK: Changed height offset from -108 to -170 to pull nameplate up
+                        const nameGroup = new fabric.Group([nameBg, nameText], { left: previewCanvasObj.width / 2, top: previewCanvasObj.height - 170, originX: 'center', originY: 'center', selectable: false });
                         nameGroup.isNameplate = true; 
                         
                         previewCanvasObj.add(nameGroup);
@@ -751,8 +753,6 @@ window.abortAndRename = function() {
     setTimeout(() => document.getElementById('stickerName').focus(), 300); 
 }
 
-// FIX: Completely bypasses the async canvas redrawing! 
-// It instantly hides the empty nameplate and beams the image immediately.
 window.bypassAndPrint = function(bypass) { 
     if (bypass) { 
         window.globalBypassNameSticker = true; 
