@@ -27,6 +27,8 @@ let activePopout = null;
 let globalSelectedName = ""; 
 let globalBypassNameSticker = false;
 let cleanPrintDataUrl = "";
+window.cleanPrintWidth = 0;
+window.cleanPrintHeight = 0;
 
 // --- Audio ---
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -557,11 +559,13 @@ window.togglePreview = function() {
     if (guide) guide.set('visible', false); 
     canvas.renderAll();
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
+    window.cleanPrintWidth = maxX - minX;
+    window.cleanPrintHeight = maxY - minY;
     
     if (guide) guide.set('visible', true); 
     canvas.renderAll();
     
-    renderPreviewSheetGrid(window.cleanPrintDataUrl, maxX - minX, maxY - minY, previewCanvas); 
+    renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
     
     box.style.display = 'flex';
   } else { 
@@ -758,7 +762,7 @@ window.abortAndRename = function() {
 
 window.bypassAndPrint = function(bypass) { 
     if (bypass) { window.globalBypassNameSticker = true; } 
-    renderPreviewSheetGrid(window.cleanPrintDataUrl, previewCanvas.width, previewCanvas.height, previewCanvas);
+    renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas);
     
     setTimeout(() => {
         window.sendToKitchen();
