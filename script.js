@@ -671,7 +671,6 @@ window.sendToKitchen = async function() {
         });
         previewCanvas.renderAll();
 
-        // Snapshot the high-res 300 DPI image
         const exportedDataUrl = previewCanvas.toDataURL({ 
             format: 'png', 
             multiplier: 2 
@@ -714,6 +713,22 @@ window.sendToKitchen = async function() {
     } finally {
         buttons.forEach(btn => { btn.innerText = 'Send to Kitchen'; btn.style.opacity = 1; });
     }
+}
+
+window.abortAndRename = function() { 
+    document.getElementById('previewActions').innerHTML = `<button class="clear-btn" onclick="window.togglePreview()">Edit Design</button><button class="bake-btn" onclick="window.sendToKitchen()">Send to Kitchen</button>`; 
+    window.togglePreview(); 
+    setTimeout(() => document.getElementById('stickerName').focus(), 300); 
+}
+
+window.bypassAndPrint = function(bypass) { 
+    if (bypass) { window.globalBypassNameSticker = true; } 
+    renderPreviewSheetGrid(window.cleanPrintDataUrl, previewCanvas.width, previewCanvas.height, previewCanvas);
+    
+    setTimeout(() => {
+        window.sendToKitchen();
+        window.globalBypassNameSticker = false; 
+    }, 400);
 }
 
 // KEYBOARD NUDGING & UNDO 
