@@ -6,7 +6,7 @@ previewStyleFix.innerHTML = `
 `;
 document.head.appendChild(previewStyleFix);
 
-// 1. GLOBAL APP STATE INITIALIZATION (UPDATED TO 400x400 SQUARE)
+// 1. GLOBAL APP STATE INITIALIZATION 
 const canvas = new fabric.Canvas('stickerCanvas', { width: 400, height: 400, backgroundColor: 'transparent', preserveObjectStacking: true, allowTouchScrolling: true });
 // EXACT PRINTER ASPECT RATIO (Target 2150x3708 / 2 = 1075x1854)
 const previewCanvas = new fabric.Canvas('previewCanvas', { width: 1075, height: 1854, selection: false });
@@ -30,7 +30,6 @@ let cleanPrintDataUrl = "";
 window.cleanPrintWidth = 0;
 window.cleanPrintHeight = 0;
 
-// Track cutline vectors locally to map onto sheet copies correctly
 window.cutlineHullPoints = [];
 window.cutlineOffsetX = 0;
 window.cutlineOffsetY = 0;
@@ -562,7 +561,6 @@ window.togglePreview = async function() {
         maxY = Math.max(maxY, b.top + b.height);
     });
 
-    // Padded safety margin around bounds to avoid stroke cropping
     const pad = 45;
     minX = Math.max(0, minX - pad);
     minY = Math.max(0, minY - pad);
@@ -575,7 +573,6 @@ window.togglePreview = async function() {
     let cyanCutline = null;
 
     if (window.cutlineHullPoints.length >= 3) {
-        // Build white connective body layer
         webShield = new fabric.Polygon(window.cutlineHullPoints, { 
             fill: '#ffffff', 
             stroke: '#ffffff', 
@@ -585,7 +582,6 @@ window.togglePreview = async function() {
             evented: false
         });
 
-        // Inflate vector coordinates outward uniformly from centroid to wrap marshmallow stroke
         let cx = 0, cy = 0;
         window.cutlineHullPoints.forEach(p => { cx += p.x; cy += p.y; });
         cx /= window.cutlineHullPoints.length; cy /= window.cutlineHullPoints.length;
@@ -595,10 +591,9 @@ window.togglePreview = async function() {
             return { x: cx + (dX / dist) * (dist + 22), y: cy + (dY / dist) * (dist + 22) };
         });
 
-        // Generate Plotter Plot Standard Cyan Dotted Cutline Shape
         cyanCutline = new fabric.Polygon(expandedHullPoints, {
             fill: 'transparent',
-            stroke: '#00FFFF', // Plotter Standard Cyan
+            stroke: '#00FFFF', 
             strokeWidth: 3,
             strokeDashArray: [8, 8],
             strokeLineJoin: 'round',
@@ -607,7 +602,7 @@ window.togglePreview = async function() {
         });
     }
 
-    // 2. Clone and inflate all active elements to map smooth Marshmallow background
+    // 2. Clone and inflate active elements
     const clonedObjects = await Promise.all(activeObjects.map(obj => {
         return new Promise(resolve => {
             obj.clone((cloned) => {
@@ -637,30 +632,28 @@ window.togglePreview = async function() {
         });
     }));
 
-    // 3. Temporarily append backing layout systems into main canvas stack
     if (webShield) canvas.add(webShield);
     clonedObjects.forEach(c => canvas.add(c));
     if (cyanCutline) canvas.add(cyanCutline);
     
-    // Z-Index Sorting: Webbing -> Clones -> Cyan Track Line -> Character Rig
     if (webShield) webShield.sendToBack();
     clonedObjects.forEach(c => c.sendToBack());
     if (cyanCutline) cyanCutline.bringToFront();
     activeObjects.forEach(o => o.bringToFront()); 
     canvas.renderAll();
 
-    // 4. Extract single merged image snapshot data containing baked high-visibility Cyan track lines
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
+    
+    window.cutlineOffsetX = minX;
+    window.cutlineOffsetY = minY;
 
-    // 5. Instantly clear temporary backing vectors to restore operational state
     if (webShield) canvas.remove(webShield);
     if (cyanCutline) canvas.remove(cyanCutline);
     clonedObjects.forEach(c => canvas.remove(c));
     canvas.renderAll();
     
-    // Hand over snapshot to multi-slot grid generator
     renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
     
     box.style.display = 'flex';
@@ -669,11 +662,10 @@ window.togglePreview = async function() {
   }
 }
 
-// --- UPDATED VISUAL GRID ENGINE (CLEAN MAP VIEW & UNIFIED CUTLINES) ---
+// --- UPDATED VISUAL GRID ENGINE (CLEAN CONTOR-MATCHED VECTOR MAP VIEW) ---
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
-    // Maintain the brand background experience
     const backgroundUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/5001f07a-737b-48eb-9cfd-62bcb5b4cf46/PasteConPaper_Background.jpg?content-type=image%2Fjpeg'; 
     
     fabric.Image.fromURL(backgroundUrl, function(bgImg) {
@@ -692,29 +684,23 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         const rows = 3;
         const stickerGap = 45;
         const sideMargin = 57;
-        
-        // Balanced layouts: Shift elements up to maximize safety clearance
         const topBuffer = 80;  
         const footerBuffer = 174; 
 
         const usableWidth = previewCanvasObj.width - (sideMargin * 2);
         const gridHeight = previewCanvasObj.height - headerHeight - topBuffer - footerBuffer;
 
-        // Calculate columns width allocation 
         const maxImgW = (usableWidth - (stickerGap * (cols - 1))) / cols;
         const maxImgHConstraint = (gridHeight - (stickerGap * (rows - 1))) / rows;
         
-        // --- 1 INCH MAXIMUM PRINT DIMENSION CONSTRAINT ENFORCEMENT ---
         const absoluteOneInchMaxCap = 300; 
         const gridScaleFactor = Math.min(maxImgW / cWidth, maxImgHConstraint / cHeight);
         
-        // Compare structural size to find target multiplier, keeping objects proportional
         let finalScale = gridScaleFactor;
         if ((cWidth * finalScale) > absoluteOneInchMaxCap || (cHeight * finalScale) > absoluteOneInchMaxCap) {
             finalScale = Math.min(absoluteOneInchMaxCap / cWidth, absoluteOneInchMaxCap / cHeight);
         }
         
-        // Safety buffer applied to target scaling bounds
         const safetyFactor = 0.95;
         const scaleFactor = finalScale * safetyFactor;
 
@@ -726,9 +712,31 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
 
         let loadedCount = 0;
         
-        // Loop through 3x3 grid to populate slots
         for(let r = 0; r < rows; r++) {
             for(let c = 0; c < cols; c++) {
+                
+                if (window.cutlineHullPoints && window.cutlineHullPoints.length >= 3) {
+                    const adjustedPoints = window.cutlineHullPoints.map(p => ({
+                        x: (p.x - window.cutlineOffsetX) * (scaleFactor / 2),
+                        y: (p.y - window.cutlineOffsetY) * (scaleFactor / 2)
+                    }));
+                    
+                    const visualDottedLine = new fabric.Polygon(adjustedPoints, {
+                        fill: 'transparent',
+                        stroke: '#aaaaaa', 
+                        strokeWidth: 2,
+                        strokeDashArray: [8, 8],
+                        strokeLineJoin: 'round',
+                        left: startX + c * (finalImgW + stickerGap),
+                        top: startY + r * (finalImgH + stickerGap),
+                        originX: 'left',
+                        originY: 'top',
+                        selectable: false,
+                        isVisualCutline: true 
+                    });
+                    previewCanvasObj.add(visualDottedLine);
+                }
+
                 fabric.Image.fromURL(srcUrl, function(img) {
                     img.set({ 
                         left: startX + c * (finalImgW + stickerGap), 
@@ -738,47 +746,45 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         originX: 'left', 
                         originY: 'top', 
                         selectable: false,
-                        // --- FIX 1: REMOVED SHADOW FROM STICKER IMAGES ---
                         shadow: null 
                     });
                     previewCanvasObj.add(img); 
+                    
+                    previewCanvasObj.getObjects().forEach(o => {
+                        if (o.isVisualCutline) o.bringToFront();
+                    });
+
                     loadedCount++;
                     
-                    // --- Build and Position the Floating Name Plate ---
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
                         const nameplateY = previewCanvasObj.height - 230;
 
-                        // Build the actual nameplate visual elements
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         const nameShield = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         
-                        // Define the exact boundary path of the nameplate pill (Rectangle with 28px corner radius)
-                        const pillP = { 
-                            w: window.globalSelectedName ? nameText.width + 62 : 226, 
-                            h: nameText.height + 34, 
-                            rx: 28 
-                        };
+                        // --- UNIFIED RULE: EXTRACT BOUNDS OF SHIELD TO POP PERFECT CONTOUR OUTLINE ---
+                        const shieldW = nameShield.width + 24; // Pull width inclusive of structural padding limits
+                        const shieldH = nameShield.height + 24; // Pull height inclusive of structural padding limits
+                        const shieldRadius = nameShield.rx + 12; // Proportionally expand radius boundary map
 
-                        // Define path for the specific nameplate cutline
                         const nameCutlinePath = [
-                            'M', pillP.rx, 0, // Move to start
-                            'L', pillP.w - pillP.rx, 0, // Top straight line
-                            'Q', pillP.w, 0, pillP.w, pillP.rx, // Top-right corner
-                            'L', pillP.w, pillP.h - pillP.rx, // Right straight line
-                            'Q', pillP.w, pillP.h, pillP.w - pillP.rx, pillP.h, // Bottom-right corner
-                            'L', pillP.rx, pillP.h, // Bottom straight line
-                            'Q', 0, pillP.h, 0, pillP.h - pillP.rx, // Bottom-left corner
-                            'L', 0, pillP.rx, // Left straight line
-                            'Q', 0, 0, pillP.rx, 0 // Top-left corner
+                            'M', shieldRadius, 0,
+                            'L', shieldW - shieldRadius, 0,
+                            'Q', shieldW, 0, shieldW, shieldRadius,
+                            'L', shieldW, shieldH - shieldRadius,
+                            'Q', shieldW, shieldH, shieldW - shieldRadius, shieldH,
+                            'L', shieldRadius, shieldH,
+                            'Q', 0, shieldH, 0, shieldH - shieldRadius,
+                            'L', 0, shieldRadius,
+                            'Q', 0, 0, shieldRadius, 0
                         ].join(' ');
 
-                        // --- FIX 2a: BUILD THE CYAN CUTLINE FOR THE NAMEPLATE ---
                         const nameplateCutline = new fabric.Path(nameCutlinePath, {
                             fill: 'transparent',
-                            stroke: '#00FFFF', // Plotter Standard Cyan
+                            stroke: '#00FFFF', // Standard Plotter Cyan
                             strokeWidth: 3,
-                            strokeDashArray: [8, 8], // Persistent visual dotted line
+                            strokeDashArray: [8, 8], 
                             strokeLineJoin: 'round',
                             left: previewCanvasObj.width / 2, 
                             top: nameplateY, 
@@ -792,12 +798,10 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                             left: previewCanvasObj.width / 2, 
                             top: nameplateY, 
                             originX: 'center', originY: 'center', selectable: false,
-                            // --- FIX 2b: REMOVED SHADOW FROM NAMEPLATE GROUP ---
                             shadow: null 
                         });
                         nameGroup.isNameplate = true; 
                         
-                        // Add elements and ensure proper stacking: Visual cutline sits *over* the visual pill
                         previewCanvasObj.add(nameGroup, nameplateCutline);
                         nameplateCutline.bringToFront();
                     }
@@ -861,7 +865,6 @@ window.sendToKitchen = async function() {
         });
         previewCanvas.renderAll();
         
-        // --- CLOUDINARY API UPLOAD LOGIC ---
         const cloudName = "u05fp6zm";
         const uploadPreset = "izbfqsmq"; 
 
@@ -957,7 +960,6 @@ window.addEventListener('keyup', e => {
   }
 });
 
-// --- NEW INTRO SCRAMBLE ---
 function playIntroScramble() {
   let flashCount = 0;
   const maxFlashes = 12; 
@@ -995,7 +997,6 @@ function playIntroScramble() {
   }, speed);
 }
 
-// --- MAP EVERYTHING TO WINDOW ---
 window.randomizeCreature = randomizeCreature;
 window.undo = undo;
 window.clearCanvas = clearCanvas;
@@ -1011,5 +1012,4 @@ window.addAccessory = addAccessory;
 window.toggleCloset = toggleCloset;
 window.closeSuccessModal = closeSuccessModal;
 
-// --- INIT ---
 initColorPickers(); renderCarousels(); renderCloset(); playIntroScramble();
