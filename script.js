@@ -540,7 +540,7 @@ window.closeSuccessModal = function() {
   document.getElementById('successLightbox').style.display = 'none';
 }
 
-// --- SAFE NON-DESTRUCTIVE DUAL SNAPSHOT PIPELINE ---
+// --- SYNCHRONOUS IN-PLACE EXPORT PROCESSOR (NO RAVE-LINE ARTIFACTS / NO TIMING DROPS) ---
 window.togglePreview = async function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
@@ -567,7 +567,7 @@ window.togglePreview = async function() {
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
 
-    // 1. Calculate Convex Hull Webbing Backing
+    // 1. Calculate White Webbing Geometry Backing
     const hullPoints = calculateConvexHullPoints(activeObjects);
     let webShield = null;
     if (hullPoints.length >= 3) {
@@ -577,8 +577,9 @@ window.togglePreview = async function() {
         });
     }
 
-    // 2. Clone and inflate structural background marshmallow parts
-    const clonedObjects = await Promise.all(activeObjects.map(obj => {
+    // 2. Clone structural parts (Excluding face assets entirely to prevent inner dash webs)
+    const structuralObjects = activeObjects.filter(o => o.customLayer !== 'face');
+    const clonedObjects = await Promise.all(structuralObjects.map(obj => {
         return new Promise(resolve => {
             obj.clone((cloned) => {
                 cloned.set({
@@ -602,7 +603,7 @@ window.togglePreview = async function() {
         });
     }));
 
-    // Inject backing structural components into canvas stack
+    // Inject solid white backings to create the print file base silhouette
     if (webShield) canvas.add(webShield);
     clonedObjects.forEach(c => canvas.add(c));
     
@@ -611,10 +612,10 @@ window.togglePreview = async function() {
     activeObjects.forEach(o => o.bringToFront()); 
     canvas.renderAll();
 
-    // SNAPSHOT A: Clear Print image file generation (Pristine of any cyan marks)
+    // SNAPSHOT A: Extracted Clean Figure base printing file
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
 
-    // 3. TRANSFORM BACKINGS TO SOLID WHITE WITH CYAN BORDERS (BLOCKS OUT INNER DASHES)
+    // 3. SHIFT STROKES TO SOLID PLOTTER CYAN WHILE KEEPING FILL WHITE (BLOCKS OUT INNER SEGMENTS)
     if (webShield) {
         webShield.set({ fill: '#ffffff', stroke: '#00FFFF', strokeWidth: 3, strokeDashArray: [8, 8] });
     }
@@ -629,21 +630,18 @@ window.togglePreview = async function() {
         turnCyanBorder(c);
     });
     
-    // --- NON-DESTRUCTIVE CLEANUP FIX: Generate separate cutline list filtering out face components entirely ---
-    // Instead of hiding the components on your live master workspace, we filter them out of the canvas entirely
-    const temporaryHiddenObjects = activeObjects.filter(o => o.customLayer === 'face');
-    temporaryHiddenObjects.forEach(o => canvas.remove(o));
+    // Temporarily shield live colored assets from the canvas array entirely during Snap B
+    activeObjects.forEach(o => canvas.remove(o));
     canvas.renderAll();
 
-    // SNAPSHOT B: Pure rubber-band standard Plotter Cyan guide image capture
+    // SNAPSHOT B: Clean vector outer rubber-band contour map trace capture
     window.cutlinePreviewDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
 
-    // Instantly replace missing face layers to completely maintain live master editor workspace state
-    temporaryHiddenObjects.forEach(o => canvas.add(o));
-    enforceLayering();
-
+    // 4. RESTORE ACTIVE MAIN WORKSPACE LAYERS COMPONENT ASSETS 100% UNTOUCHED
     if (webShield) canvas.remove(webShield);
     clonedObjects.forEach(c => canvas.remove(c));
+    activeObjects.forEach(o => canvas.add(o));
+    enforceLayering();
     canvas.renderAll();
     
     renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cutlinePreviewDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
@@ -654,7 +652,7 @@ window.togglePreview = async function() {
   }
 }
 
-// --- MULTI-SLOT COMPILER ENGINE ---
+// --- VISUAL GRID SHEET COMPILER ENGINE ---
 function renderPreviewSheetGrid(cleanImgUrl, cutlineImgUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
@@ -709,7 +707,7 @@ function renderPreviewSheetGrid(cleanImgUrl, cutlineImgUrl, cWidth, cHeight, pre
                 const targetLeft = startX + c * (finalImgW + stickerGap);
                 const targetTop = startY + r * (finalImgH + stickerGap);
 
-                // Slot Layer 1: Clean printed backing layer
+                // Slot Base Card Layer: Place design figure snapshot onto layout bounds
                 fabric.Image.fromURL(cleanImgUrl, function(img) {
                     img.set({ 
                         left: targetLeft, top: targetTop, 
@@ -750,14 +748,14 @@ function renderPreviewSheetGrid(cleanImgUrl, cutlineImgUrl, cWidth, cHeight, pre
                         previewCanvasObj.add(nameGroup, nameplateCutline);
                     }
 
-                    // Sweep visual overlay layer cards strictly up to peak layer space
+                    // Push standalone active overlays above rendering nodes
                     previewCanvasObj.getObjects().forEach(o => {
                         if (o.isVisualCutline) o.bringToFront();
                     });
                     previewCanvasObj.renderAll();
                 }, { crossOrigin: 'anonymous' });
 
-                // Slot Layer 2: Overlay standalone clean Cyan contour mask lines over top space
+                // Slot Guide Overlay Card Layer: Place pure crisp Cyan rubber-band contour line card cards over base card cards
                 fabric.Image.fromURL(cutlineImgUrl, function(cutImg) {
                     cutImg.set({
                         left: targetLeft, top: targetTop,
