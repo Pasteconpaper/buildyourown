@@ -27,12 +27,9 @@ let activePopout = null;
 let globalSelectedName = ""; 
 let globalBypassNameSticker = false;
 let cleanPrintDataUrl = "";
+let cutlinePreviewDataUrl = ""; // Holds the separate pure cyan visual guide layout
 window.cleanPrintWidth = 0;
 window.cleanPrintHeight = 0;
-
-window.cutlineHullPoints = [];
-window.cutlineOffsetX = 0;
-window.cutlineOffsetY = 0;
 
 // --- Audio ---
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -543,7 +540,7 @@ window.closeSuccessModal = function() {
   document.getElementById('successLightbox').style.display = 'none';
 }
 
-// --- CLONE PIPELINE: SNAP ONLY WHITE BACKGROUND + FIGURE (NO CYAN BAKED) ---
+// --- NEW DUAL-SNAPSHOT EXPORT ENGINE (GUARANTEES 100% PERFECT ALIGNMENT) ---
 window.togglePreview = async function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
@@ -567,19 +564,20 @@ window.togglePreview = async function() {
     maxX = Math.min(canvas.width, maxX + pad);
     maxY = Math.min(canvas.height, maxY + pad);
 
-    // Store base canvas hull path and offsets globally to draw overlay guides later
-    window.cutlineHullPoints = calculateConvexHullPoints(activeObjects);
-    window.cutlineOffsetX = minX;
-    window.cutlineOffsetY = minY;
+    window.cleanPrintWidth = maxX - minX;
+    window.cleanPrintHeight = maxY - minY;
 
+    // 1. Calculate Convex Hull Webbing Backing
+    const hullPoints = calculateConvexHullPoints(activeObjects);
     let webShield = null;
-    if (window.cutlineHullPoints.length >= 3) {
-        webShield = new fabric.Polygon(window.cutlineHullPoints, { 
+    if (hullPoints.length >= 3) {
+        webShield = new fabric.Polygon(hullPoints, { 
             fill: '#ffffff', stroke: '#ffffff', strokeWidth: 35, strokeLineJoin: 'round', 
             selectable: false, evented: false
         });
     }
 
+    // 2. Clone and inflate components to construct Marshmallow layout body
     const clonedObjects = await Promise.all(activeObjects.map(obj => {
         return new Promise(resolve => {
             obj.clone((cloned) => {
@@ -604,6 +602,7 @@ window.togglePreview = async function() {
         });
     }));
 
+    // Inject backing structural components into canvas stack
     if (webShield) canvas.add(webShield);
     clonedObjects.forEach(c => canvas.add(c));
     
@@ -612,16 +611,38 @@ window.togglePreview = async function() {
     activeObjects.forEach(o => o.bringToFront()); 
     canvas.renderAll();
 
-    // Capture pure white die-cut backing file output (Completely free of cyan marks)
+    // SNAPSHOT A: Clear Print image file generation (Pruned clean of cyan lines)
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
-    window.cleanPrintWidth = maxX - minX;
-    window.cleanPrintHeight = maxY - minY;
 
+    // 3. TRANSFORM BACKINGS TO SOLID PLOTTER CYAN TO EXTRACT USER GUIDE LAYER
+    if (webShield) {
+        webShield.set({ fill: 'transparent', stroke: '#00FFFF', strokeWidth: 3, strokeDashArray: [8, 8] });
+    }
+    clonedObjects.forEach(c => {
+        const turnCyan = (item) => {
+            if (item.type === 'group') {
+                item.getObjects().forEach(o => turnCyan(o));
+            } else {
+                item.set({ fill: 'transparent', stroke: '#00FFFF', strokeWidth: 3, strokeDashArray: [8, 8] });
+            }
+        };
+        turnCyan(c);
+    });
+    
+    // Temporarily hide actual colored components so we extract a clean overlay track mapping
+    activeObjects.forEach(o => o.set('visible', false));
+    canvas.renderAll();
+
+    // SNAPSHOT B: Pure standard Plotter Cyan guide image capture (Perfect alignment locked)
+    window.cutlinePreviewDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
+
+    // Restore operational baseline visibility state and scrub components completely
+    activeObjects.forEach(o => o.set('visible', true));
     if (webShield) canvas.remove(webShield);
     clonedObjects.forEach(c => canvas.remove(c));
     canvas.renderAll();
     
-    renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
+    renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cutlinePreviewDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
     
     box.style.display = 'flex';
   } else { 
@@ -629,8 +650,8 @@ window.togglePreview = async function() {
   }
 }
 
-// --- SCREEN GRID BUILDER (RENDERS EXTENDED CYAN VECTOR OVERLAYS ONLY) ---
-function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
+// --- REBALANCED MULTI-SLOT SHEET COMPILER (DUAL-IMAGE DRIVEN COOPERATIVE MULTIPLEXER) ---
+function renderPreviewSheetGrid(cleanImgUrl, cutlineImgUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
     const backgroundUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/5001f07a-737b-48eb-9cfd-62bcb5b4cf46/PasteConPaper_Background.jpg?content-type=image%2Fjpeg'; 
@@ -681,42 +702,25 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         
         for(let r = 0; r < rows; r++) {
             for(let c = 0; c < cols; c++) {
-                
-                // Render Creature Cutline Overlay strictly inside preview space parameters
-                if (window.cutlineHullPoints && window.cutlineHullPoints.length >= 3) {
-                    let cx = 0, cy = 0;
-                    window.cutlineHullPoints.forEach(p => { cx += p.x; cy += p.y; });
-                    cx /= window.cutlineHullPoints.length; cy /= window.cutlineHullPoints.length;
-                    
-                    const adjustedPoints = window.cutlineHullPoints.map(p => {
-                        const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY);
-                        // Force alignment to match the external contour edge bounds precisely
-                        const expandedX = cx + (dX / dist) * (dist + 22);
-                        const expandedY = cy + (dY / dist) * (dist + 22);
-                        return {
-                            x: (expandedX - window.cutlineOffsetX) * (scaleFactor / 2),
-                            y: (expandedY - window.cutlineOffsetY) * (scaleFactor / 2)
-                        };
-                    });
-                    
-                    const visualDottedLine = new fabric.Polygon(adjustedPoints, {
-                        fill: 'transparent',
-                        stroke: '#00FFFF', // Plotter Cyan Guide
-                        strokeWidth: 3,
-                        strokeDashArray: [8, 8],
-                        strokeLineJoin: 'round',
-                        left: startX + c * (finalImgW + stickerGap),
-                        top: startY + r * (finalImgH + stickerGap),
-                        originX: 'left', originY: 'top', selectable: false, evented: false,
-                        isVisualCutline: true 
-                    });
-                    previewCanvasObj.add(visualDottedLine);
-                }
+                const targetLeft = startX + c * (finalImgW + stickerGap);
+                const targetTop = startY + r * (finalImgH + stickerGap);
 
-                fabric.Image.fromURL(srcUrl, function(img) {
+                // Slot Layer 1: Instantiate the exact contour-matching Cyan Dotted Cutline Image
+                fabric.Image.fromURL(cutlineImgUrl, function(cutImg) {
+                    cutImg.set({
+                        left: targetLeft, top: targetTop,
+                        scaleX: scaleFactor / 2, scaleY: scaleFactor / 2,
+                        originX: 'left', originY: 'top', selectable: false, evented: false,
+                        isVisualCutline: true
+                    });
+                    previewCanvasObj.add(cutImg);
+                    cutImg.bringToFront();
+                });
+
+                // Slot Layer 2: Instantiate structural clean figure base sheet print copy over layout
+                fabric.Image.fromURL(cleanImgUrl, function(img) {
                     img.set({ 
-                        left: startX + c * (finalImgW + stickerGap), 
-                        top: startY + r * (finalImgH + stickerGap), 
+                        left: targetLeft, top: targetTop, 
                         scaleX: scaleFactor / 2, scaleY: scaleFactor / 2, 
                         originX: 'left', originY: 'top', selectable: false,
                         shadow: null 
@@ -732,23 +736,16 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         const nameShield = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         
-                        // Extract precise metrics from compiled base group to loop structural bounds
                         const targetCutWidth = nameShield.width + nameShield.strokeWidth;
                         const targetCutHeight = nameShield.height + nameShield.strokeWidth;
 
-                        // MATCHING RULE: Build a matching concentric rectangle tracing the absolute rim contour limits
                         const nameplateCutline = new fabric.Rect({
-                            width: targetCutWidth,
-                            height: targetCutHeight,
+                            width: targetCutWidth, height: targetCutHeight,
                             rx: nameShield.rx + (nameShield.strokeWidth / 2),
                             ry: nameShield.ry + (nameShield.strokeWidth / 2),
-                            fill: 'transparent',
-                            stroke: '#00FFFF', // Plotter Standard Cyan Guide
-                            strokeWidth: 3,
-                            strokeDashArray: [8, 8],
-                            left: nameplateX, 
-                            top: nameplateY, 
-                            originX: 'center', originY: 'center', selectable: false, evented: false,
+                            fill: 'transparent', stroke: '#00FFFF', strokeWidth: 3, strokeDashArray: [8, 8],
+                            left: nameplateX, top: nameplateY, originX: 'center', originY: 'center', 
+                            selectable: false, evented: false,
                             isVisualCutline: true
                         });
 
@@ -761,7 +758,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         previewCanvasObj.add(nameGroup, nameplateCutline);
                     }
 
-                    // Strict overlay layer sorting
+                    // Strict uniform layering filter sweep: Force all visual cyan structures to top layer
                     previewCanvasObj.getObjects().forEach(o => {
                         if (o.isVisualCutline) o.bringToFront();
                     });
@@ -772,7 +769,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     }, { crossOrigin: 'anonymous' });
 }
 
-// --- CLOUDINARY ENGINE (WIPES INTERACTIVE CYAN MARKS BEFORE UPLOAD) ---
+// --- CLOUDINARY UPLOAD PIPELINE (PERFECTLY FLUSHES INTERACTIVE CYAN OVERLAYS) ---
 window.sendToKitchen = async function() {
     const rawInput = document.getElementById('stickerName').value.trim();
     
@@ -808,11 +805,11 @@ window.sendToKitchen = async function() {
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
-        // FLIP TOGGLES: Turn off visibility flags on all structural layout items
+        // Strip the background and ALL temporary visual guides from the sheet export copy cleanly
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
-            if (obj.isVisualCutline) obj.set('visible', false); // Clean strip achieved!
+            if (obj.isVisualCutline) obj.set('visible', false); 
         });
         previewCanvas.renderAll();
 
@@ -820,7 +817,7 @@ window.sendToKitchen = async function() {
             format: 'png', multiplier: 2 
         });
 
-        // Restore canvas visibility flags completely back for UI inspection state
+        // Restore preview panel elements completely back for user inspection loop
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
