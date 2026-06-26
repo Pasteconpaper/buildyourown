@@ -27,6 +27,7 @@ let activePopout = null;
 let globalSelectedName = ""; 
 let globalBypassNameSticker = false;
 let cleanPrintDataUrl = "";
+let cutlinePreviewDataUrl = ""; 
 window.cleanPrintWidth = 0;
 window.cleanPrintHeight = 0;
 
@@ -544,7 +545,7 @@ window.closeSuccessModal = function() {
   document.getElementById('successLightbox').style.display = 'none';
 }
 
-// --- SAFE AND CLEAN EXPORT PIPELINE ---
+// --- SAFE AND CLEAN EXPORT PIPELINE (TRUE RUBBER BAND CYAN TRACE) ---
 window.togglePreview = async function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
@@ -571,20 +572,36 @@ window.togglePreview = async function() {
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
 
-    // Record the raw coordinates globally so we can generate the true rubber band later
     window.cutlineHullPoints = calculateConvexHullPoints(activeObjects);
     window.cutlineOffsetX = minX;
     window.cutlineOffsetY = minY;
 
     let webShield = null;
+    let cyanCutline = null;
+    
     if (window.cutlineHullPoints.length >= 3) {
         webShield = new fabric.Polygon(window.cutlineHullPoints, { 
             fill: '#ffffff', stroke: '#ffffff', strokeWidth: 35, strokeLineJoin: 'round', 
             selectable: false, evented: false
         });
+
+        // Generate TRUE rubber band outline (No face/body masks required, purely math)
+        let cx = 0, cy = 0;
+        window.cutlineHullPoints.forEach(p => { cx += p.x; cy += p.y; });
+        cx /= window.cutlineHullPoints.length; cy /= window.cutlineHullPoints.length;
+        
+        const expandedHullPoints = window.cutlineHullPoints.map(p => {
+            const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY);
+            if (dist === 0) return { x: cx, y: cy }; 
+            return { x: cx + (dX / dist) * (dist + 22), y: cy + (dY / dist) * (dist + 22) };
+        });
+
+        cyanCutline = new fabric.Polygon(expandedHullPoints, {
+            fill: 'transparent', stroke: '#00FFFF', strokeWidth: 3, strokeDashArray: [8, 8],
+            strokeLineJoin: 'round', selectable: false, evented: false
+        });
     }
 
-    // Generate solid white body padding elements
     const clonedObjects = await Promise.all(activeObjects.map(obj => {
         return new Promise(resolve => {
             obj.clone((cloned) => {
@@ -609,24 +626,34 @@ window.togglePreview = async function() {
         });
     }));
 
+    // SNAPSHOT A: Extracted Clean Figure base printing file (Without Cyan)
     if (webShield) canvas.add(webShield);
     clonedObjects.forEach(c => canvas.add(c));
-    
     if (webShield) webShield.sendToBack();
     clonedObjects.forEach(c => c.sendToBack());
     activeObjects.forEach(o => o.bringToFront()); 
     canvas.renderAll();
 
-    // EXPORT THE PURE IMAGE WITH NO CYAN LINES BAKED IN AT ALL
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
 
-    // Instantly scrub modifications to ensure the workspace returns to normal
-    if (webShield) canvas.remove(webShield);
-    clonedObjects.forEach(c => canvas.remove(c));
+    // SNAPSHOT B: Pure Cyan cutline overlay (Transparent Background, Math-Based)
+    activeObjects.forEach(o => o.set('visible', false));
+    if (webShield) webShield.set('visible', false);
+    clonedObjects.forEach(c => c.set('visible', false));
+    
+    if (cyanCutline) canvas.add(cyanCutline);
     canvas.renderAll();
     
-    // Hand image to the layout grid
-    renderPreviewSheetGrid(previewCanvas); 
+    window.cutlinePreviewDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
+
+    // Instantly restore workspace
+    if (webShield) canvas.remove(webShield);
+    if (cyanCutline) canvas.remove(cyanCutline);
+    clonedObjects.forEach(c => canvas.remove(c));
+    activeObjects.forEach(o => o.set('visible', true));
+    canvas.renderAll();
+    
+    renderPreviewSheetGrid(window.cleanPrintDataUrl, window.cutlinePreviewDataUrl, window.cleanPrintWidth, window.cleanPrintHeight, previewCanvas); 
     
     box.style.display = 'flex';
   } else { 
@@ -635,7 +662,7 @@ window.togglePreview = async function() {
 }
 
 // --- DYNAMIC LIVE VECTOR GRID GENERATOR ---
-function renderPreviewSheetGrid(previewCanvasObj) {
+function renderPreviewSheetGrid(cleanImgUrl, cutlineImgUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
     const backgroundUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/5001f07a-737b-48eb-9cfd-62bcb5b4cf46/PasteConPaper_Background.jpg?content-type=image%2Fjpeg'; 
@@ -666,18 +693,18 @@ function renderPreviewSheetGrid(previewCanvasObj) {
         const maxImgHConstraint = (gridHeight - (stickerGap * (rows - 1))) / rows;
         
         const absoluteOneInchMaxCap = 300; 
-        const gridScaleFactor = Math.min(maxImgW / window.cleanPrintWidth, maxImgHConstraint / window.cleanPrintHeight);
+        const gridScaleFactor = Math.min(maxImgW / cWidth, maxImgHConstraint / cHeight);
         
         let finalScale = gridScaleFactor;
-        if ((window.cleanPrintWidth * finalScale) > absoluteOneInchMaxCap || (window.cleanPrintHeight * finalScale) > absoluteOneInchMaxCap) {
-            finalScale = Math.min(absoluteOneInchMaxCap / window.cleanPrintWidth, absoluteOneInchMaxCap / window.cleanPrintHeight);
+        if ((cWidth * finalScale) > absoluteOneInchMaxCap || (cHeight * finalScale) > absoluteOneInchMaxCap) {
+            finalScale = Math.min(absoluteOneInchMaxCap / cWidth, absoluteOneInchMaxCap / cHeight);
         }
         
         const safetyFactor = 0.95;
         const scaleFactor = finalScale * safetyFactor;
 
-        const finalImgW = window.cleanPrintWidth * scaleFactor;
-        const finalImgH = window.cleanPrintHeight * scaleFactor;
+        const finalImgW = cWidth * scaleFactor;
+        const finalImgH = cHeight * scaleFactor;
         
         const startX = sideMargin + (usableWidth - (cols * finalImgW + (cols - 1) * stickerGap)) / 2;
         const startY = headerHeight + topBuffer + (gridHeight - (rows * finalImgH + (rows - 1) * stickerGap)) / 2;
@@ -689,51 +716,15 @@ function renderPreviewSheetGrid(previewCanvasObj) {
                 const targetLeft = startX + c * (finalImgW + stickerGap);
                 const targetTop = startY + r * (finalImgH + stickerGap);
 
-                // LAYER 1: Place clean colored character with white backing graphic
-                fabric.Image.fromURL(window.cleanPrintDataUrl, function(img) {
+                fabric.Image.fromURL(cleanImgUrl, function(img) {
                     img.set({ 
                         left: targetLeft, top: targetTop, 
                         scaleX: scaleFactor / 2, scaleY: scaleFactor / 2, 
                         originX: 'left', originY: 'top', selectable: false, shadow: null 
                     });
                     previewCanvasObj.add(img); 
-                    
-                    // LAYER 2: Compute and draw the True Rubber Band Cyan Overlay
-                    if (window.cutlineHullPoints && window.cutlineHullPoints.length >= 3) {
-                        let cx = 0, cy = 0;
-                        window.cutlineHullPoints.forEach(p => { cx += p.x; cy += p.y; });
-                        cx /= window.cutlineHullPoints.length; cy /= window.cutlineHullPoints.length;
-                        
-                        // Push hull points outward by exactly 18px to trace the white edge
-                        const expansion = 18; 
-                        
-                        const finalPoints = window.cutlineHullPoints.map(p => {
-                            const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY);
-                            const expandedX = cx + (dX / dist) * (dist + expansion);
-                            const expandedY = cy + (dY / dist) * (dist + expansion);
-                            
-                            const localX = expandedX - window.cutlineOffsetX;
-                            const localY = expandedY - window.cutlineOffsetY;
-
-                            const scaledX = localX * (scaleFactor / 2);
-                            const scaledY = localY * (scaleFactor / 2);
-
-                            return { x: targetLeft + scaledX, y: targetTop + scaledY };
-                        });
-
-                        // Draw path natively using absolute geometry (no tricky bounding box shifts)
-                        const pathString = finalPoints.map((p, i) => (i === 0 ? 'M ' : 'L ') + p.x + ' ' + p.y).join(' ') + ' Z';
-                        const visualDottedLine = new fabric.Path(pathString, {
-                            fill: 'transparent', stroke: '#00FFFF', strokeWidth: 3, strokeDashArray: [8, 8],
-                            strokeLineJoin: 'round', selectable: false, evented: false,
-                            isVisualCutline: true 
-                        });
-                        previewCanvasObj.add(visualDottedLine);
-                    }
-
                     loadedCount++;
                     
-                    // BUILD NAMEPLATE AND ITS CYAN CUTLINE
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
                         const nameplateY = previewCanvasObj.height - 230;
                         const nameplateX = previewCanvasObj.width / 2;
@@ -763,12 +754,21 @@ function renderPreviewSheetGrid(previewCanvasObj) {
                         previewCanvasObj.add(nameGroup, nameplateCutline);
                     }
 
-                    // Strict Z-Index order: Ensure all Cyan paths rest cleanly over top
                     previewCanvasObj.getObjects().forEach(o => {
                         if (o.isVisualCutline) o.bringToFront();
                     });
                     previewCanvasObj.renderAll();
                 }, { crossOrigin: 'anonymous' });
+
+                fabric.Image.fromURL(cutlineImgUrl, function(cutImg) {
+                    cutImg.set({
+                        left: targetLeft, top: targetTop,
+                        scaleX: scaleFactor / 2, scaleY: scaleFactor / 2,
+                        originX: 'left', originY: 'top', selectable: false, evented: false,
+                        isVisualCutline: true
+                    });
+                    previewCanvasObj.add(cutImg);
+                });
             }
         }
     }, { crossOrigin: 'anonymous' });
@@ -810,7 +810,6 @@ window.sendToKitchen = async function() {
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
-        // Strip the background and ALL cyan lines off the master graphic completely
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
@@ -822,7 +821,6 @@ window.sendToKitchen = async function() {
             format: 'png', multiplier: 2 
         });
 
-        // Visually rebuild layout components immediately back to normal status
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
@@ -892,7 +890,6 @@ window.bypassAndPrint = function(bypass) {
     }, 1000);
 }
 
-// KEYBOARD NUDGING & UNDO 
 window.addEventListener('keydown', e => { 
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
@@ -977,5 +974,4 @@ window.addAccessory = addAccessory;
 window.toggleCloset = toggleCloset;
 window.closeSuccessModal = closeSuccessModal;
 
-// --- INITIALIZATION ---
 initColorPickers(); renderCarousels(); renderCloset(); playIntroScramble();
