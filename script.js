@@ -6,7 +6,7 @@ previewStyleFix.innerHTML = `
 `;
 document.head.appendChild(previewStyleFix);
 
-// 1. GLOBAL APP STATE INITIALIZATION 
+// 1. GLOBAL APP STATE INITIALIZATION
 const canvas = new fabric.Canvas('stickerCanvas', { width: 400, height: 400, backgroundColor: 'transparent', preserveObjectStacking: true, allowTouchScrolling: true });
 // EXACT PRINTER ASPECT RATIO (Target 2150x3708 / 2 = 1075x1854)
 const previewCanvas = new fabric.Canvas('previewCanvas', { width: 1075, height: 1854, selection: false });
@@ -543,7 +543,7 @@ window.closeSuccessModal = function() {
   document.getElementById('successLightbox').style.display = 'none';
 }
 
-// --- HYBRID EXPORT PIPELINE WITH CYAN CUTLINE INJECTION ---
+// --- CLONE PIPELINE: SNAP ONLY WHITE BACKGROUND + FIGURE (NO CYAN BAKED) ---
 window.togglePreview = async function() {
   const box = document.getElementById('previewLightbox');
   if (box.style.display === 'none') {
@@ -567,48 +567,24 @@ window.togglePreview = async function() {
     maxX = Math.min(canvas.width, maxX + pad);
     maxY = Math.min(canvas.height, maxY + pad);
 
-    // 1. Calculate Convex Hull Webbing Points
+    // Store base canvas hull path and offsets globally to draw overlay guides later
     window.cutlineHullPoints = calculateConvexHullPoints(activeObjects);
-    let webShield = null;
-    let cyanCutline = null;
+    window.cutlineOffsetX = minX;
+    window.cutlineOffsetY = minY;
 
+    let webShield = null;
     if (window.cutlineHullPoints.length >= 3) {
         webShield = new fabric.Polygon(window.cutlineHullPoints, { 
-            fill: '#ffffff', 
-            stroke: '#ffffff', 
-            strokeWidth: 35, 
-            strokeLineJoin: 'round', 
-            selectable: false, 
-            evented: false
-        });
-
-        let cx = 0, cy = 0;
-        window.cutlineHullPoints.forEach(p => { cx += p.x; cy += p.y; });
-        cx /= window.cutlineHullPoints.length; cy /= window.cutlineHullPoints.length;
-        
-        const expandedHullPoints = window.cutlineHullPoints.map(p => {
-            const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY);
-            return { x: cx + (dX / dist) * (dist + 22), y: cy + (dY / dist) * (dist + 22) };
-        });
-
-        cyanCutline = new fabric.Polygon(expandedHullPoints, {
-            fill: 'transparent',
-            stroke: '#00FFFF', 
-            strokeWidth: 3,
-            strokeDashArray: [8, 8],
-            strokeLineJoin: 'round',
-            selectable: false,
-            evented: false
+            fill: '#ffffff', stroke: '#ffffff', strokeWidth: 35, strokeLineJoin: 'round', 
+            selectable: false, evented: false
         });
     }
 
-    // 2. Clone and inflate active elements
     const clonedObjects = await Promise.all(activeObjects.map(obj => {
         return new Promise(resolve => {
             obj.clone((cloned) => {
                 cloned.set({
-                    left: obj.left, top: obj.top,
-                    scaleX: obj.scaleX, scaleY: obj.scaleY,
+                    left: obj.left, top: obj.top, scaleX: obj.scaleX, scaleY: obj.scaleY,
                     angle: obj.angle, originX: obj.originX, originY: obj.originY
                 });
 
@@ -617,12 +593,8 @@ window.togglePreview = async function() {
                         item.getObjects().forEach(o => makeFat(o));
                     } else {
                         item.set({
-                            fill: '#ffffff',
-                            stroke: '#ffffff',
-                            strokeWidth: (item.strokeWidth || 0) + 35, 
-                            strokeLineJoin: 'round',
-                            strokeLineCap: 'round',
-                            shadow: null 
+                            fill: '#ffffff', stroke: '#ffffff', strokeWidth: (item.strokeWidth || 0) + 35, 
+                            strokeLineJoin: 'round', strokeLineCap: 'round', shadow: null 
                         });
                     }
                 };
@@ -634,23 +606,18 @@ window.togglePreview = async function() {
 
     if (webShield) canvas.add(webShield);
     clonedObjects.forEach(c => canvas.add(c));
-    if (cyanCutline) canvas.add(cyanCutline);
     
     if (webShield) webShield.sendToBack();
     clonedObjects.forEach(c => c.sendToBack());
-    if (cyanCutline) cyanCutline.bringToFront();
     activeObjects.forEach(o => o.bringToFront()); 
     canvas.renderAll();
 
+    // Capture pure white die-cut backing file output (Completely free of cyan marks)
     window.cleanPrintDataUrl = canvas.toDataURL({ left: minX, top: minY, width: maxX - minX, height: maxY - minY, format: 'png', multiplier: 2 });
     window.cleanPrintWidth = maxX - minX;
     window.cleanPrintHeight = maxY - minY;
-    
-    window.cutlineOffsetX = minX;
-    window.cutlineOffsetY = minY;
 
     if (webShield) canvas.remove(webShield);
-    if (cyanCutline) canvas.remove(cyanCutline);
     clonedObjects.forEach(c => canvas.remove(c));
     canvas.renderAll();
     
@@ -662,7 +629,7 @@ window.togglePreview = async function() {
   }
 }
 
-// --- UPDATED VISUAL GRID ENGINE (CLEAN CONTOR-MATCHED VECTOR MAP VIEW) ---
+// --- SCREEN GRID BUILDER (RENDERS EXTENDED CYAN VECTOR OVERLAYS ONLY) ---
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
@@ -715,23 +682,32 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         for(let r = 0; r < rows; r++) {
             for(let c = 0; c < cols; c++) {
                 
+                // Render Creature Cutline Overlay strictly inside preview space parameters
                 if (window.cutlineHullPoints && window.cutlineHullPoints.length >= 3) {
-                    const adjustedPoints = window.cutlineHullPoints.map(p => ({
-                        x: (p.x - window.cutlineOffsetX) * (scaleFactor / 2),
-                        y: (p.y - window.cutlineOffsetY) * (scaleFactor / 2)
-                    }));
+                    let cx = 0, cy = 0;
+                    window.cutlineHullPoints.forEach(p => { cx += p.x; cy += p.y; });
+                    cx /= window.cutlineHullPoints.length; cy /= window.cutlineHullPoints.length;
+                    
+                    const adjustedPoints = window.cutlineHullPoints.map(p => {
+                        const dX = p.x - cx, dY = p.y - cy, dist = Math.sqrt(dX*dX+dY*dY);
+                        // Force alignment to match the external contour edge bounds precisely
+                        const expandedX = cx + (dX / dist) * (dist + 22);
+                        const expandedY = cy + (dY / dist) * (dist + 22);
+                        return {
+                            x: (expandedX - window.cutlineOffsetX) * (scaleFactor / 2),
+                            y: (expandedY - window.cutlineOffsetY) * (scaleFactor / 2)
+                        };
+                    });
                     
                     const visualDottedLine = new fabric.Polygon(adjustedPoints, {
                         fill: 'transparent',
-                        stroke: '#aaaaaa', 
-                        strokeWidth: 2,
+                        stroke: '#00FFFF', // Plotter Cyan Guide
+                        strokeWidth: 3,
                         strokeDashArray: [8, 8],
                         strokeLineJoin: 'round',
                         left: startX + c * (finalImgW + stickerGap),
                         top: startY + r * (finalImgH + stickerGap),
-                        originX: 'left',
-                        originY: 'top',
-                        selectable: false,
+                        originX: 'left', originY: 'top', selectable: false, evented: false,
                         isVisualCutline: true 
                     });
                     previewCanvasObj.add(visualDottedLine);
@@ -741,70 +717,54 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                     img.set({ 
                         left: startX + c * (finalImgW + stickerGap), 
                         top: startY + r * (finalImgH + stickerGap), 
-                        scaleX: scaleFactor / 2, 
-                        scaleY: scaleFactor / 2, 
-                        originX: 'left', 
-                        originY: 'top', 
-                        selectable: false,
+                        scaleX: scaleFactor / 2, scaleY: scaleFactor / 2, 
+                        originX: 'left', originY: 'top', selectable: false,
                         shadow: null 
                     });
                     previewCanvasObj.add(img); 
-                    
-                    previewCanvasObj.getObjects().forEach(o => {
-                        if (o.isVisualCutline) o.bringToFront();
-                    });
-
                     loadedCount++;
                     
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
                         const nameplateY = previewCanvasObj.height - 230;
+                        const nameplateX = previewCanvasObj.width / 2;
 
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         const nameShield = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         
-                        // --- UNIFIED RULE: EXTRACT BOUNDS OF SHIELD TO POP PERFECT CONTOUR OUTLINE ---
-                        const shieldW = nameShield.width + 24; // Pull width inclusive of structural padding limits
-                        const shieldH = nameShield.height + 24; // Pull height inclusive of structural padding limits
-                        const shieldRadius = nameShield.rx + 12; // Proportionally expand radius boundary map
+                        // Extract precise metrics from compiled base group to loop structural bounds
+                        const targetCutWidth = nameShield.width + nameShield.strokeWidth;
+                        const targetCutHeight = nameShield.height + nameShield.strokeWidth;
 
-                        const nameCutlinePath = [
-                            'M', shieldRadius, 0,
-                            'L', shieldW - shieldRadius, 0,
-                            'Q', shieldW, 0, shieldW, shieldRadius,
-                            'L', shieldW, shieldH - shieldRadius,
-                            'Q', shieldW, shieldH, shieldW - shieldRadius, shieldH,
-                            'L', shieldRadius, shieldH,
-                            'Q', 0, shieldH, 0, shieldH - shieldRadius,
-                            'L', 0, shieldRadius,
-                            'Q', 0, 0, shieldRadius, 0
-                        ].join(' ');
-
-                        const nameplateCutline = new fabric.Path(nameCutlinePath, {
+                        // MATCHING RULE: Build a matching concentric rectangle tracing the absolute rim contour limits
+                        const nameplateCutline = new fabric.Rect({
+                            width: targetCutWidth,
+                            height: targetCutHeight,
+                            rx: nameShield.rx + (nameShield.strokeWidth / 2),
+                            ry: nameShield.ry + (nameShield.strokeWidth / 2),
                             fill: 'transparent',
-                            stroke: '#00FFFF', // Standard Plotter Cyan
+                            stroke: '#00FFFF', // Plotter Standard Cyan Guide
                             strokeWidth: 3,
-                            strokeDashArray: [8, 8], 
-                            strokeLineJoin: 'round',
-                            left: previewCanvasObj.width / 2, 
+                            strokeDashArray: [8, 8],
+                            left: nameplateX, 
                             top: nameplateY, 
-                            originX: 'center', 
-                            originY: 'center',
-                            selectable: false,
-                            shadow: null 
+                            originX: 'center', originY: 'center', selectable: false, evented: false,
+                            isVisualCutline: true
                         });
 
                         const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { 
-                            left: previewCanvasObj.width / 2, 
-                            top: nameplateY, 
-                            originX: 'center', originY: 'center', selectable: false,
+                            left: nameplateX, top: nameplateY, originX: 'center', originY: 'center', selectable: false,
                             shadow: null 
                         });
                         nameGroup.isNameplate = true; 
                         
                         previewCanvasObj.add(nameGroup, nameplateCutline);
-                        nameplateCutline.bringToFront();
                     }
+
+                    // Strict overlay layer sorting
+                    previewCanvasObj.getObjects().forEach(o => {
+                        if (o.isVisualCutline) o.bringToFront();
+                    });
                     previewCanvasObj.renderAll();
                 }, { crossOrigin: 'anonymous' });
             }
@@ -812,7 +772,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     }, { crossOrigin: 'anonymous' });
 }
 
-// --- CLOUDINARY OUTPUT ENGINE ---
+// --- CLOUDINARY ENGINE (WIPES INTERACTIVE CYAN MARKS BEFORE UPLOAD) ---
 window.sendToKitchen = async function() {
     const rawInput = document.getElementById('stickerName').value.trim();
     
@@ -848,20 +808,23 @@ window.sendToKitchen = async function() {
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
 
+        // FLIP TOGGLES: Turn off visibility flags on all structural layout items
         previewCanvas.setBackgroundColor(null, () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', false);
+            if (obj.isVisualCutline) obj.set('visible', false); // Clean strip achieved!
         });
         previewCanvas.renderAll();
 
         const exportedDataUrl = previewCanvas.toDataURL({ 
-            format: 'png', 
-            multiplier: 2 
+            format: 'png', multiplier: 2 
         });
 
+        // Restore canvas visibility flags completely back for UI inspection state
         previewCanvas.setBackgroundColor('#ffffff', () => {});
         previewCanvas.getObjects().forEach(obj => {
             if (obj.isHeaderElement) obj.set('visible', true);
+            if (obj.isVisualCutline) obj.set('visible', true);
         });
         previewCanvas.renderAll();
         
