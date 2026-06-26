@@ -669,10 +669,11 @@ window.togglePreview = async function() {
   }
 }
 
-// --- UPDATED VISUAL GRID ENGINE (PROPORTIONAL 1 INCH CAPPING & SHIFTED UP) ---
+// --- UPDATED VISUAL GRID ENGINE (CLEAN MAP VIEW & UNIFIED CUTLINES) ---
 function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
     previewCanvasObj.clear();
     
+    // Maintain the brand background experience
     const backgroundUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/5001f07a-737b-48eb-9cfd-62bcb5b4cf46/PasteConPaper_Background.jpg?content-type=image%2Fjpeg'; 
     
     fabric.Image.fromURL(backgroundUrl, function(bgImg) {
@@ -692,7 +693,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         const stickerGap = 45;
         const sideMargin = 57;
         
-        // Balanced layouts: Shift elements up to maximize safety clearance around pill shape
+        // Balanced layouts: Shift elements up to maximize safety clearance
         const topBuffer = 80;  
         const footerBuffer = 174; 
 
@@ -704,7 +705,6 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
         const maxImgHConstraint = (gridHeight - (stickerGap * (rows - 1))) / rows;
         
         // --- 1 INCH MAXIMUM PRINT DIMENSION CONSTRAINT ENFORCEMENT ---
-        // Target 1 inch = 300px absolute max constraint in structural file bounds
         const absoluteOneInchMaxCap = 300; 
         const gridScaleFactor = Math.min(maxImgW / cWidth, maxImgHConstraint / cHeight);
         
@@ -714,7 +714,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
             finalScale = Math.min(absoluteOneInchMaxCap / cWidth, absoluteOneInchMaxCap / cHeight);
         }
         
-        // Safety buffer reduction coefficient applied to finish target scaling bounds neatly
+        // Safety buffer applied to target scaling bounds
         const safetyFactor = 0.95;
         const scaleFactor = finalScale * safetyFactor;
 
@@ -726,6 +726,7 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
 
         let loadedCount = 0;
         
+        // Loop through 3x3 grid to populate slots
         for(let r = 0; r < rows; r++) {
             for(let c = 0; c < cols; c++) {
                 fabric.Image.fromURL(srcUrl, function(img) {
@@ -737,28 +738,68 @@ function renderPreviewSheetGrid(srcUrl, cWidth, cHeight, previewCanvasObj) {
                         originX: 'left', 
                         originY: 'top', 
                         selectable: false,
-                        shadow: new fabric.Shadow({
-                            color: 'rgba(26, 26, 26, 0.25)', 
-                            blur: 0, offsetX: 6, offsetY: 6
-                        })
+                        // --- FIX 1: REMOVED SHADOW FROM STICKER IMAGES ---
+                        shadow: null 
                     });
                     previewCanvasObj.add(img); 
                     loadedCount++;
                     
+                    // --- Build and Position the Floating Name Plate ---
                     if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
+                        const nameplateY = previewCanvasObj.height - 230;
+
+                        // Build the actual nameplate visual elements
                         const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
                         const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         const nameShield = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, rx: 28, ry: 28, originX: 'center', originY: 'center' });
                         
+                        // Define the exact boundary path of the nameplate pill (Rectangle with 28px corner radius)
+                        const pillP = { 
+                            w: window.globalSelectedName ? nameText.width + 62 : 226, 
+                            h: nameText.height + 34, 
+                            rx: 28 
+                        };
+
+                        // Define path for the specific nameplate cutline
+                        const nameCutlinePath = [
+                            'M', pillP.rx, 0, // Move to start
+                            'L', pillP.w - pillP.rx, 0, // Top straight line
+                            'Q', pillP.w, 0, pillP.w, pillP.rx, // Top-right corner
+                            'L', pillP.w, pillP.h - pillP.rx, // Right straight line
+                            'Q', pillP.w, pillP.h, pillP.w - pillP.rx, pillP.h, // Bottom-right corner
+                            'L', pillP.rx, pillP.h, // Bottom straight line
+                            'Q', 0, pillP.h, 0, pillP.h - pillP.rx, // Bottom-left corner
+                            'L', 0, pillP.rx, // Left straight line
+                            'Q', 0, 0, pillP.rx, 0 // Top-left corner
+                        ].join(' ');
+
+                        // --- FIX 2a: BUILD THE CYAN CUTLINE FOR THE NAMEPLATE ---
+                        const nameplateCutline = new fabric.Path(nameCutlinePath, {
+                            fill: 'transparent',
+                            stroke: '#00FFFF', // Plotter Standard Cyan
+                            strokeWidth: 3,
+                            strokeDashArray: [8, 8], // Persistent visual dotted line
+                            strokeLineJoin: 'round',
+                            left: previewCanvasObj.width / 2, 
+                            top: nameplateY, 
+                            originX: 'center', 
+                            originY: 'center',
+                            selectable: false,
+                            shadow: null 
+                        });
+
                         const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { 
                             left: previewCanvasObj.width / 2, 
-                            top: previewCanvasObj.height - 230, // Adjusted vertically upward to restore canvas balance
+                            top: nameplateY, 
                             originX: 'center', originY: 'center', selectable: false,
-                            shadow: new fabric.Shadow({ color: 'rgba(26, 26, 26, 0.25)', blur: 0, offsetX: 6, offsetY: 6 })
+                            // --- FIX 2b: REMOVED SHADOW FROM NAMEPLATE GROUP ---
+                            shadow: null 
                         });
                         nameGroup.isNameplate = true; 
                         
-                        previewCanvasObj.add(nameGroup);
+                        // Add elements and ensure proper stacking: Visual cutline sits *over* the visual pill
+                        previewCanvasObj.add(nameGroup, nameplateCutline);
+                        nameplateCutline.bringToFront();
                     }
                     previewCanvasObj.renderAll();
                 }, { crossOrigin: 'anonymous' });
