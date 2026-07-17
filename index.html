@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=24">
+    <link rel="stylesheet" href="style.css?v=25">
     
     <style>
       @media (max-width: 768px) {
         .pantry .name-group {
-          margin: 16px 0; /* Ensures consistent vertical padding between Closet, Name, and Actions */
+          margin-top: 16px;
+          margin-bottom: 16px;
         }
       }
     </style>
@@ -187,21 +188,19 @@
     <script>
       function adjustMobileLayout() {
         const pantry = document.querySelector('.pantry');
+        const closetWrapper = document.querySelector('.closet-wrapper');
         const cuttingBoardWrapper = document.querySelector('.cutting-board-wrapper');
         const nameGroup = document.querySelector('.name-group');
         const editActions = document.getElementById('editActions');
         
-        // If mobile screen size (768px or smaller)
         if (window.innerWidth <= 768) {
-          // Move Name Group inside Pantry, right above editActions
-          if (nameGroup.parentElement !== pantry) {
-            pantry.insertBefore(nameGroup, editActions);
-          }
+          // FORCE EXACT ORDER ON MOBILE: Closet -> Name -> Edit Actions
+          closetWrapper.insertAdjacentElement('afterend', nameGroup);
+          nameGroup.insertAdjacentElement('afterend', editActions);
         } else {
-          // Restore Name Group to the bottom of Cutting Board on Desktop
-          if (nameGroup.parentElement !== cuttingBoardWrapper) {
-            cuttingBoardWrapper.appendChild(nameGroup);
-          }
+          // RESTORE DESKTOP LAYOUT
+          pantry.appendChild(editActions);
+          cuttingBoardWrapper.appendChild(nameGroup);
         }
       }
       
@@ -210,7 +209,7 @@
       window.addEventListener('resize', adjustMobileLayout);
     </script>
 
-    <script src="script.js?v=24"></script>
+    <script src="script.js?v=25"></script>
 
   </body>
   
