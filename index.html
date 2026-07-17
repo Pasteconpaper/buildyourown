@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=23">
   </head>
     
   <body>
@@ -103,15 +103,9 @@
 
       <div class="closet-wrapper">
         <button id="closetToggleBtn" class="closet-btn" onclick="window.toggleCloset()">Open Closet</button>
-        <div id="closetDrawer" class="closet-drawer">
-        </div>
+        <div id="closetDrawer" class="closet-drawer"></div>
       </div>
       
-      <div class="name-group ingredient-group">
-        <label>Name Your Masterpiece</label>
-        <input type="text" id="stickerName" placeholder="e.g. El Jefe" maxlength="18" />
-      </div>
-
       <div class="canvas-actions" id="editActions">
         <button id="undoBtn" class="undo-btn disabled-btn" onclick="window.undo()">Undo</button>
         <button class="clear-btn" onclick="window.clearCanvas()">Start Over</button>
@@ -133,6 +127,12 @@
           </svg>
         </button>
       </div>
+      
+      <div class="name-group ingredient-group">
+        <label>Name Your Masterpiece</label>
+        <input type="text" id="stickerName" placeholder="e.g. El Jefe" maxlength="18" />
+      </div>
+
     </div>
     
   </div>
@@ -176,7 +176,7 @@
   </div>
 </div>
 
-    <script src="script.js?v=19"></script>
+    <script src="script.js?v=18"></script>
 
   </body>
   
