@@ -5,13 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=25">
+    <link rel="stylesheet" href="style.css?v=26">
     
     <style>
       @media (max-width: 768px) {
-        .pantry .name-group {
+        /* Ensure all conceptual CTA groups have perfect visual alignment and consistent padding */
+        .closet-wrapper,
+        .pantry .canvas-actions,
+        .cutting-board-wrapper .name-group,
+        .cutting-board-wrapper .canvas-actions {
           margin-top: 16px;
           margin-bottom: 16px;
+        }
+        
+        /* Unified stack styling for the new interleaved order */
+        .cutting-board-wrapper {
+          display: flex;
+          flex-direction: column;
         }
       }
     </style>
@@ -188,19 +198,18 @@
     <script>
       function adjustMobileLayout() {
         const pantry = document.querySelector('.pantry');
-        const closetWrapper = document.querySelector('.closet-wrapper');
         const cuttingBoardWrapper = document.querySelector('.cutting-board-wrapper');
-        const nameGroup = document.querySelector('.name-group');
         const editActions = document.getElementById('editActions');
+        const nameGroup = document.querySelector('.cutting-board-wrapper .name-group');
         
         if (window.innerWidth <= 768) {
-          // FORCE EXACT ORDER ON MOBILE: Closet -> Name -> Edit Actions
-          closetWrapper.insertAdjacentElement('afterend', nameGroup);
-          nameGroup.insertAdjacentElement('afterend', editActions);
+          // FORCE UDO/PREVIEW BAR STRUCTURALLY TO THE BOTTOM: After the Name field
+          cuttingBoardWrapper.appendChild(editActions);
         } else {
           // RESTORE DESKTOP LAYOUT
-          pantry.appendChild(editActions);
-          cuttingBoardWrapper.appendChild(nameGroup);
+          if (editActions.parentElement === cuttingBoardWrapper) {
+            pantry.appendChild(editActions);
+          }
         }
       }
       
@@ -209,7 +218,7 @@
       window.addEventListener('resize', adjustMobileLayout);
     </script>
 
-    <script src="script.js?v=25"></script>
+    <script src="script.js?v=26"></script>
 
   </body>
   
