@@ -5,14 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=31">
+    <link rel="stylesheet" href="style.css?v=32">
     
     <style>
       @media (max-width: 768px) {
-        /* Reduce the Header Box */
+        /* FLUSH HEADER: Push to the absolute top of the screen */
+        body {
+          padding-top: 0 !important;
+          margin-top: 0 !important;
+        }
+        .app-wrapper {
+          padding-top: 0 !important;
+        }
         .app-header {
+          margin-top: 0 !important;
           padding: 12px 16px !important;
           margin-bottom: 12px !important;
+          border-top-left-radius: 0 !important;
+          border-top-right-radius: 0 !important;
+          border-top: none !important; /* Removes the top stroke for a native bleed look */
         }
         .app-header h1 {
           font-size: 1.5rem !important;
@@ -24,39 +35,29 @@
           margin: 0 !important;
         }
 
-        /* Name Field + Randomizer Combo Row */
-        .mobile-combo-row {
+        /* FOOLPROOF COMBO CONTAINER */
+        .combo-container {
           display: flex !important;
           flex-direction: row !important;
-          flex-wrap: nowrap !important; /* FORCES elements to stay on one line */
-          align-items: flex-end !important;
+          align-items: center !important;
           gap: 12px !important;
-          margin-top: 8px !important;
-          margin-bottom: 16px !important;
           width: 100% !important;
+          margin-top: 4px !important;
         }
         
-        .mobile-combo-row .name-group {
-          flex: 1 1 auto !important; /* Tells it to take ONLY the available remaining space */
-          margin: 0 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          justify-content: flex-end !important; 
-          width: auto !important; /* REMOVED the 100% width that was causing the drop */
-        }
-        
-        /* Force identical heights for a clean flush look */
-        .mobile-combo-row input[type="text"] {
+        .combo-container input[type="text"] {
+          flex: 1 !important;
           height: 54px !important;
+          margin: 0 !important;
+          width: auto !important;
           box-sizing: border-box !important;
-          margin-bottom: 0 !important; 
-          width: 100% !important;
         }
         
-        .mobile-combo-row .loco-btn {
+        /* Overrides for the Randomizer inside the combo container */
+        .combo-container .loco-btn {
           position: relative !important;
           top: auto !important;
-          bottom: 0 !important;
+          bottom: auto !important;
           left: auto !important;
           right: auto !important;
           transform: none !important;
@@ -212,9 +213,9 @@
         </button>
       </div>
       
-      <div id="mobileComboRow" class="mobile-combo-row">
-        <div class="name-group ingredient-group">
-          <label>Name Your Masterpiece</label>
+      <div class="name-group ingredient-group">
+        <label>Name Your Masterpiece</label>
+        <div id="comboContainer" class="combo-container">
           <input type="text" id="stickerName" placeholder="e.g. El Jefe" maxlength="18" />
         </div>
       </div>
@@ -268,16 +269,16 @@
         const pantry = document.querySelector('.pantry');
         const editActions = document.getElementById('editActions');
         const scrambleBtn = document.getElementById('scrambleBtn');
-        const mobileComboRow = document.getElementById('mobileComboRow');
+        const comboContainer = document.getElementById('comboContainer');
         const cuttingBoard = document.querySelector('.cutting-board');
         
         if (window.innerWidth <= 768) {
           // Pin the Edit CTAs to the very top
           kitchenContainer.insertBefore(editActions, kitchenContainer.firstChild);
           
-          // Move the Randomizer into the Name Field flex row
-          if (scrambleBtn.parentElement !== mobileComboRow) {
-            mobileComboRow.appendChild(scrambleBtn);
+          // Move the Randomizer into the foolproof combo container (perfect alignment)
+          if (scrambleBtn.parentElement !== comboContainer) {
+            comboContainer.appendChild(scrambleBtn);
           }
         } else {
           // RESTORE DESKTOP LAYOUT
@@ -295,7 +296,7 @@
       window.addEventListener('resize', adjustMobileLayout);
     </script>
 
-    <script src="script.js?v=31"></script>
+    <script src="script.js?v=32"></script>
 
   </body>
   
