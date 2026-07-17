@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=29">
+    <link rel="stylesheet" href="style.css?v=31">
     
     <style>
       @media (max-width: 768px) {
@@ -28,27 +28,35 @@
         .mobile-combo-row {
           display: flex !important;
           flex-direction: row !important;
+          flex-wrap: nowrap !important; /* FORCES elements to stay on one line */
           align-items: flex-end !important;
-          gap: 16px !important;
+          gap: 12px !important;
           margin-top: 8px !important;
           margin-bottom: 16px !important;
-        }
-        .mobile-combo-row .name-group {
-          flex: 1 !important;
-          margin: 0 !important;
           width: 100% !important;
+        }
+        
+        .mobile-combo-row .name-group {
+          flex: 1 1 auto !important; /* Tells it to take ONLY the available remaining space */
+          margin: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: flex-end !important; 
+          width: auto !important; /* REMOVED the 100% width that was causing the drop */
         }
         
         /* Force identical heights for a clean flush look */
         .mobile-combo-row input[type="text"] {
           height: 54px !important;
           box-sizing: border-box !important;
+          margin-bottom: 0 !important; 
+          width: 100% !important;
         }
         
         .mobile-combo-row .loco-btn {
           position: relative !important;
           top: auto !important;
-          bottom: auto !important;
+          bottom: 0 !important;
           left: auto !important;
           right: auto !important;
           transform: none !important;
@@ -287,7 +295,7 @@
       window.addEventListener('resize', adjustMobileLayout);
     </script>
 
-    <script src="script.js?v=29"></script>
+    <script src="script.js?v=31"></script>
 
   </body>
   
