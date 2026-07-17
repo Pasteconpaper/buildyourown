@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=23">
+    <link rel="stylesheet" href="style.css?v=24">
+    
+    <style>
+      @media (max-width: 768px) {
+        .pantry .name-group {
+          margin: 16px 0; /* Ensures consistent vertical padding between Closet, Name, and Actions */
+        }
+      }
+    </style>
   </head>
     
   <body>
@@ -176,7 +184,33 @@
   </div>
 </div>
 
-    <script src="script.js?v=18"></script>
+    <script>
+      function adjustMobileLayout() {
+        const pantry = document.querySelector('.pantry');
+        const cuttingBoardWrapper = document.querySelector('.cutting-board-wrapper');
+        const nameGroup = document.querySelector('.name-group');
+        const editActions = document.getElementById('editActions');
+        
+        // If mobile screen size (768px or smaller)
+        if (window.innerWidth <= 768) {
+          // Move Name Group inside Pantry, right above editActions
+          if (nameGroup.parentElement !== pantry) {
+            pantry.insertBefore(nameGroup, editActions);
+          }
+        } else {
+          // Restore Name Group to the bottom of Cutting Board on Desktop
+          if (nameGroup.parentElement !== cuttingBoardWrapper) {
+            cuttingBoardWrapper.appendChild(nameGroup);
+          }
+        }
+      }
+      
+      // Run immediately and re-run on window resize
+      adjustMobileLayout();
+      window.addEventListener('resize', adjustMobileLayout);
+    </script>
+
+    <script src="script.js?v=24"></script>
 
   </body>
   
