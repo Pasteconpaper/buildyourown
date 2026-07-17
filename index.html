@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=32">
+    <link rel="stylesheet" href="style.css?v=33">
     
     <style>
       @media (max-width: 768px) {
@@ -23,7 +23,7 @@
           margin-bottom: 12px !important;
           border-top-left-radius: 0 !important;
           border-top-right-radius: 0 !important;
-          border-top: none !important; /* Removes the top stroke for a native bleed look */
+          border-top: none !important;
         }
         .app-header h1 {
           font-size: 1.5rem !important;
@@ -33,6 +33,16 @@
           font-size: 0.85rem !important;
           line-height: 1.3 !important;
           margin: 0 !important;
+        }
+
+        /* OPTICAL ALIGNMENT FIX FOR THE LABEL */
+        .name-group label {
+          display: block !important;
+          width: 100% !important;
+          text-align: center !important;
+          /* 54px button + 12px gap = 66px of invisible padding to perfectly center over input */
+          padding-right: 66px !important; 
+          box-sizing: border-box !important;
         }
 
         /* FOOLPROOF COMBO CONTAINER */
@@ -296,7 +306,7 @@
       window.addEventListener('resize', adjustMobileLayout);
     </script>
 
-    <script src="script.js?v=32"></script>
+    <script src="script.js?v=33"></script>
 
   </body>
   
