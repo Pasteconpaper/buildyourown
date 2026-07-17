@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=28">
+    <link rel="stylesheet" href="style.css?v=29">
     
     <style>
       @media (max-width: 768px) {
-        /* IDEA 1: Reduce the Header Box */
+        /* Reduce the Header Box */
         .app-header {
           padding: 12px 16px !important;
           margin-bottom: 12px !important;
@@ -24,11 +24,11 @@
           margin: 0 !important;
         }
 
-        /* IDEA 2: Name Field + Randomizer Combo Row */
+        /* Name Field + Randomizer Combo Row */
         .mobile-combo-row {
           display: flex !important;
           flex-direction: row !important;
-          align-items: flex-end !important; /* Aligns the button flush with the input box */
+          align-items: flex-end !important;
           gap: 16px !important;
           margin-top: 8px !important;
           margin-bottom: 16px !important;
@@ -38,7 +38,13 @@
           margin: 0 !important;
           width: 100% !important;
         }
-        /* Override absolute positioning of the Randomizer for this flex row */
+        
+        /* Force identical heights for a clean flush look */
+        .mobile-combo-row input[type="text"] {
+          height: 54px !important;
+          box-sizing: border-box !important;
+        }
+        
         .mobile-combo-row .loco-btn {
           position: relative !important;
           top: auto !important;
@@ -48,12 +54,21 @@
           transform: none !important;
           margin: 0 !important;
           flex-shrink: 0 !important;
+          width: 54px !important;
+          height: 54px !important;
+          padding: 8px !important;
+          box-sizing: border-box !important;
         }
 
         /* Top CTAs adjustments */
         #editActions {
           margin-top: 0 !important;
           margin-bottom: 16px !important;
+        }
+        
+        /* Pull the tools (carousels) up by exactly 20px */
+        .pantry-grid {
+          margin-top: -20px !important;
         }
         
         .closet-wrapper {
@@ -272,7 +287,7 @@
       window.addEventListener('resize', adjustMobileLayout);
     </script>
 
-    <script src="script.js?v=28"></script>
+    <script src="script.js?v=29"></script>
 
   </body>
   
