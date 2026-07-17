@@ -5,20 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=26">
+    <link rel="stylesheet" href="style.css?v=27">
     
     <style>
       @media (max-width: 768px) {
-        /* Ensure all conceptual CTA groups have perfect visual alignment and consistent padding */
+        /* Tighten the gap between the Header and the top CTAs */
+        .app-header {
+          margin-bottom: 8px !important;
+        }
+        
+        #editActions {
+          margin-top: 0 !important;
+          margin-bottom: 16px !important;
+        }
+        
+        /* Ensure consistent padding for the rest of the elements */
         .closet-wrapper,
-        .pantry .canvas-actions,
-        .cutting-board-wrapper .name-group,
-        .cutting-board-wrapper .canvas-actions {
+        .cutting-board-wrapper .name-group {
           margin-top: 16px;
           margin-bottom: 16px;
         }
         
-        /* Unified stack styling for the new interleaved order */
         .cutting-board-wrapper {
           display: flex;
           flex-direction: column;
@@ -197,19 +204,16 @@
 
     <script>
       function adjustMobileLayout() {
+        const kitchenContainer = document.querySelector('.kitchen-container');
         const pantry = document.querySelector('.pantry');
-        const cuttingBoardWrapper = document.querySelector('.cutting-board-wrapper');
         const editActions = document.getElementById('editActions');
-        const nameGroup = document.querySelector('.cutting-board-wrapper .name-group');
         
         if (window.innerWidth <= 768) {
-          // FORCE UDO/PREVIEW BAR STRUCTURALLY TO THE BOTTOM: After the Name field
-          cuttingBoardWrapper.appendChild(editActions);
+          // Lean into the happy accident: Pin the CTAs to the very top of the layout
+          kitchenContainer.insertBefore(editActions, kitchenContainer.firstChild);
         } else {
           // RESTORE DESKTOP LAYOUT
-          if (editActions.parentElement === cuttingBoardWrapper) {
-            pantry.appendChild(editActions);
-          }
+          pantry.appendChild(editActions);
         }
       }
       
@@ -218,7 +222,7 @@
       window.addEventListener('resize', adjustMobileLayout);
     </script>
 
-    <script src="script.js?v=26"></script>
+    <script src="script.js?v=27"></script>
 
   </body>
   
