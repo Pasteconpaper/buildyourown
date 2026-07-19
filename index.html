@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=35">
+    <link rel="stylesheet" href="style.css?v=36">
     
     <style>
       @media (max-width: 768px) {
@@ -98,6 +98,63 @@
         .cutting-board-wrapper {
           display: flex;
           flex-direction: column;
+        }
+
+        /* --------------------------------------------------- */
+        /* THE VIRTUAL PAGE: MOBILE PREVIEW HIJACK             */
+        /* --------------------------------------------------- */
+        #previewLightbox {
+          background-color: #f7f6f1 !important; /* Soft paper background matching app */
+          padding: 0 !important;
+        }
+        
+        #previewLightbox .lightbox-modal {
+          width: 100% !important;
+          height: 100% !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          display: flex !important;
+          flex-direction: column !important;
+          padding: 24px 24px 40px 24px !important;
+          box-sizing: border-box !important;
+          background: transparent !important;
+        }
+
+        #previewLightbox .lightbox-canvas-box {
+          flex: 1 !important; /* Tells the canvas to take up all remaining vertical space */
+          margin-bottom: 32px !important;
+          border: 4px solid #000 !important;
+          border-radius: 16px !important;
+          box-shadow: 6px 6px 0px #000 !important;
+          background: #fff !important;
+          padding: 16px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          min-height: 0 !important;
+        }
+
+        /* Stack buttons vertically and make them massive */
+        #previewLightbox #previewActions {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 16px !important;
+          margin: 0 0 24px 0 !important; /* Clears the negative margin hack from earlier */
+        }
+
+        #previewLightbox #previewActions button {
+          width: 100% !important;
+          height: 64px !important; /* Super thumb-friendly */
+          font-size: 1.25rem !important;
+          margin: 0 !important;
+        }
+
+        #previewLightbox p {
+          margin-bottom: 16px !important;
+          font-size: 0.75rem !important;
         }
       }
     </style>
@@ -307,7 +364,7 @@
       window.addEventListener('resize', adjustMobileLayout);
     </script>
 
-    <script src="script.js?v=35"></script>
+    <script src="script.js?v=36"></script>
 
   </body>
   
