@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=52">
+    <link rel="stylesheet" href="style.css?v=53">
     
     <style>
       @media (max-width: 768px) {
@@ -313,7 +313,8 @@
 
 <div id="ticketOverlay" class="ticket-overlay ticket-hidden">
   <div class="ticket-paper">
-    <h2>🎫 La Stickería <br><span style="font-size: 0.85rem; color:#555; display:block; margin-top:4px;">Ticket #001</span></h2>
+    <h2>La Stickería <br><span style="font-size: 0.85rem; color:#555; display:block; margin-top:4px;">Ticket #001</span></h2>
+    
     <p style="font-weight:bold; font-size:1.1rem; margin-bottom:20px;">Cook up your own custom character!</p>
     
     <ul>
@@ -322,14 +323,16 @@
       <li>[ 1x ] Look Snazzy <span>(Pick an item deep from the closet)</span></li>
     </ul>
 
-    <div class="ticket-divider"></div>
+    <div class="ticket-divider" style="border-top: 2px solid #8ebdd6; border-bottom: none; margin: 24px 0;"></div>
     
-    <div style="text-align: center; margin: 16px 0;">
-      <p style="font-weight:900; font-size: 1.2rem; margin-bottom: 8px;">El Collage Loco</p>
-      <span style="font-size: 0.85rem; color:#555; display:block; margin-bottom: 16px;">(Tap for chaos, but be careful!)</span>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 16px 0;">
+      <div style="text-align: left;">
+        <p style="font-weight:900; font-size: 1.2rem; margin: 0 0 6px 0;">El Collage Loco</p>
+        <span style="font-size: 0.85rem; color:#555; display:block;">(Tap for chaos, but be careful!)</span>
+      </div>
       
-      <div class="loco-btn" style="position:relative; transform:none; margin:0 auto; width: 54px; height: 54px; pointer-events: none;">
-        <span class="loco-counter">?</span>
+      <div class="loco-btn" style="position:relative; transform:none; margin:0; width: 54px; height: 54px; pointer-events: none; flex-shrink: 0;">
+        <span class="loco-counter">5</span>
         <svg viewBox="0 0 40 40">
           <circle class="loco-shape loco-circle" cx="14" cy="18" r="6" />
           <rect class="loco-shape loco-rect" x="20" y="8" width="12" height="12" transform="rotate(15 26 14)" />
@@ -338,9 +341,12 @@
       </div>
     </div>
 
-    <div class="ticket-divider"></div>
+    <div class="ticket-divider" style="border-top: 2px solid #8ebdd6; border-bottom: none; margin: 24px 0;"></div>
 
-    <p style="text-align:center; font-size:0.85rem; font-weight:bold; margin-top:16px;">NOTES: Send to the kitchen for a fresh sticker sheet!</p>
+    <div style="text-align: left; margin-bottom: 24px;">
+      <p style="font-weight: 900; font-size: 1.1rem; margin: 0 0 8px 0; text-transform: uppercase;">Notes:</p>
+      <p style="margin: 0; font-size: 1.45rem; font-family: 'Caveat', cursive; color: #F24822; line-height: 1.15; transform: rotate(-2deg); transform-origin: left center;">Preview your creation, then send to the kitchen for your fresh sticker sheet.</p>
+    </div>
     
     <button class="order-btn" onclick="window.orderUp()">Order Up!</button>
   </div>
