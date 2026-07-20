@@ -973,5 +973,13 @@ window.bypassAndPrint = bypassAndPrint;
 window.addAccessory = addAccessory;
 window.toggleCloset = toggleCloset;
 window.closeSuccessModal = closeSuccessModal;
+window.playIntroScramble = playIntroScramble; // NEW: Expose to the HTML
 
-initColorPickers(); renderCarousels(); renderCloset(); playIntroScramble();
+initColorPickers(); 
+renderCarousels(); 
+renderCloset(); 
+
+// NEW: Only play the animation immediately if they skip the ticket
+if (localStorage.getItem('laStickeria_hasSeenTicket')) {
+  playIntroScramble();
+}
