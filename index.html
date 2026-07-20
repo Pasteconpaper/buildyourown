@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Build your own - Neo Brutalism</title>
-    <link rel="stylesheet" href="style.css?v=38">
+    <link rel="stylesheet" href="style.css?v=39">
     
     <style>
       @media (max-width: 768px) {
@@ -240,16 +240,22 @@
         box-shadow: 0px 0px 0 #000;
       }
 
-      .dirty-canvas-overlay {
+   .dirty-canvas-overlay {
         position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        pointer-events: none; /* Lets clicks pass through to the buttons */
-        z-index: 90;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none; /* Crucial: lets clicks pass through to the app */
+        z-index: 999;
         display: flex;
         justify-content: center;
+        align-items: flex-start; /* Aligns to top */
         opacity: 1;
-        transition: opacity 0.3s ease;
-        padding-top: 10px;
+        transition: opacity 0.4s ease;
+      }
+      .dirty-canvas-overlay svg {
+        width: 100%;
+        height: 100%;
+        max-width: 400px; /* Prevents it from getting too wide on tablets */
+        object-fit: contain; /* Forces the SVG to maintain its aspect ratio */
       }
       .dirty-canvas-overlay.sharpie-hidden {
         opacity: 0;
@@ -301,133 +307,40 @@
 
 <div class="app-wrapper">
   
-  <button id="helpBtn" class="help-btn" onclick="window.showDirtyCanvas(event)" title="Show Help">?</button>
+  <header class="app-header" style="display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 8px;">
+    <h1 style="margin: 0; line-height: 1;">La Stickería</h1>
+    <button id="helpBtn" class="help-btn" onclick="window.showDirtyCanvas(event)" title="Show Help">?</button>
+  </header>
 
   <div class="kitchen-container" style="position: relative;">
     
     <div id="dirtyCanvas" class="dirty-canvas-overlay sharpie-hidden">
-      
-      </div>
+      ```
 
-    <div class="pantry">
-      <div class="pantry-grid">
-        <div class="ingredient-group">
-          <label>Body</label>
-          <div class="carousel-container">
-            <button class="carousel-nav" onclick="window.swapRigElement('body', -1)">❮</button>
-            <div class="carousel-center">
-              <div class="carousel-view" id="bodyDisplay" onclick="window.toggleColorPicker('body', event)"></div>
-              <div class="color-electron" id="electron-body" onclick="window.toggleColorPicker('body', event)"></div>
-              <div class="electron-popout" id="popout-body"></div>
-            </div>
-            <button class="carousel-nav" onclick="window.swapRigElement('body', 1)">❯</button>
-          </div>
-        </div>
-        
-        <div class="ingredient-group">
-          <label>Hair</label>
-          <div class="carousel-container">
-            <button class="carousel-nav" onclick="window.swapRigElement('hair', -1)">❮</button>
-            <div class="carousel-center">
-              <div class="carousel-view" id="hairDisplay" onclick="window.toggleColorPicker('hair', event)"></div>
-              <div class="color-electron" id="electron-hair" onclick="window.toggleColorPicker('hair', event)"></div>
-              <div class="electron-popout" id="popout-hair"></div>
-            </div>
-            <button class="carousel-nav" onclick="window.swapRigElement('hair', 1)">❯</button>
-          </div>
-        </div>
+### Step 2: Fix the Help Button CSS
+In your `<style>` block at the top of the HTML, find the `.help-btn` CSS rule and **replace** it with this updated version so it sits perfectly inside the new header without floating over your preview button:
 
-        <div class="ingredient-group">
-          <label>Eyes</label>
-          <div class="carousel-container">
-            <button class="carousel-nav" onclick="window.swapRigElement('eye', -1)">❮</button>
-            <div class="carousel-center">
-              <div class="carousel-view" id="eyeDisplay" onclick="window.toggleColorPicker('eye', event)"></div>
-              <div class="color-electron" id="electron-eye" onclick="window.toggleColorPicker('eye', event)"></div>
-              <div class="electron-popout" id="popout-eye"></div>
-            </div>
-            <button class="carousel-nav" onclick="window.swapRigElement('eye', 1)">❯</button>
-          </div>
-        </div>
-
-        <div class="ingredient-group">
-          <label>Mouth</label>
-          <div class="carousel-container">
-            <button class="carousel-nav" onclick="window.swapRigElement('mouth', -1)">❮</button>
-            <div class="carousel-center">
-              <div class="carousel-view" id="mouthDisplay" onclick="window.toggleColorPicker('mouth', event)"></div>
-              <div class="color-electron" id="electron-mouth" onclick="window.toggleColorPicker('mouth', event)"></div>
-              <div class="electron-popout" id="popout-mouth"></div>
-            </div>
-            <button class="carousel-nav" onclick="window.swapRigElement('mouth', 1)">❯</button>
-          </div>
-        </div>
-
-        <div class="ingredient-group">
-          <label>Arms</label>
-          <div class="carousel-container">
-            <button class="carousel-nav" onclick="window.swapRigElement('arm', -1)">❮</button>
-            <div class="carousel-center">
-              <div class="carousel-view" id="armDisplay" onclick="window.toggleColorPicker('arm', event)"></div>
-              <div class="color-electron" id="electron-arm" onclick="window.toggleColorPicker('arm', event)"></div>
-              <div class="electron-popout" id="popout-arm"></div>
-            </div>
-            <button class="carousel-nav" onclick="window.swapRigElement('arm', 1)">❯</button>
-          </div>
-        </div>
-
-        <div class="ingredient-group">
-          <label>Legs</label>
-          <div class="carousel-container">
-            <button class="carousel-nav" onclick="window.swapRigElement('leg', -1)">❮</button>
-            <div class="carousel-center">
-              <div class="carousel-view" id="legDisplay" onclick="window.toggleColorPicker('leg', event)"></div>
-              <div class="color-electron" id="electron-leg" onclick="window.toggleColorPicker('leg', event)"></div>
-              <div class="electron-popout" id="popout-leg"></div>
-            </div>
-            <button class="carousel-nav" onclick="window.swapRigElement('leg', 1)">❯</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="closet-wrapper">
-        <button id="closetToggleBtn" class="closet-btn" onclick="window.toggleCloset()">Open Closet</button>
-        <div id="closetDrawer" class="closet-drawer"></div>
-      </div>
-      
-      <div class="canvas-actions" id="editActions">
-        <button id="undoBtn" class="undo-btn disabled-btn" onclick="window.undo()">Undo</button>
-        <button class="clear-btn" onclick="window.clearCanvas()">Start Over</button>
-        <button class="bake-btn" onclick="window.togglePreview()">Preview</button>
-      </div>
-
-    </div>
-
-    <div class="cutting-board-wrapper">
-      <div class="cutting-board">
-        <canvas id="stickerCanvas"></canvas>
-        
-        <button class="loco-btn" id="scrambleBtn" onclick="window.randomizeCreature()" title="El Collage Loco">
-          <span id="scrambleCounter" class="loco-counter">5</span>
-          <svg viewBox="0 0 40 40">
-            <circle class="loco-shape loco-circle" cx="14" cy="18" r="6" />
-            <rect class="loco-shape loco-rect" x="20" y="8" width="12" height="12" transform="rotate(15 26 14)" />
-            <polygon class="loco-shape loco-poly" points="12,36 22,24 32,36" stroke-linejoin="round" />
-          </svg>
-        </button>
-      </div>
-      
-      <div class="name-group ingredient-group">
-        <label>Name Your Masterpiece</label>
-        <div id="comboContainer" class="combo-container">
-          <input type="text" id="stickerName" placeholder="e.g. El Jefe" maxlength="18" />
-        </div>
-      </div>
-
-    </div>
-    
-  </div>
-</div>
+```css
+      .help-btn {
+        width: 36px;
+        height: 36px;
+        background: #fff;
+        border: 3px solid #000;
+        box-shadow: 3px 3px 0 #000;
+        border-radius: 8px;
+        font-weight: 900;
+        font-size: 1.2rem;
+        cursor: pointer;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 4px; /* Perfect bottom optical alignment with the H1 */
+      }
+      .help-btn:active {
+        transform: translate(3px, 3px);
+        box-shadow: 0px 0px 0 #000;
+      }
 
 <div id="previewLightbox" class="lightbox-overlay" style="display: none;">
   <div class="lightbox-modal">
