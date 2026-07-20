@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=48">
+    <link rel="stylesheet" href="style.css?v=49">
     
     <style>
       @media (max-width: 768px) {
@@ -112,19 +112,20 @@
           padding: 0 !important;
         }
         
-        #previewLightbox .lightbox-modal {
-          width: 100% !important;
-          height: 100% !important;
-          max-width: 100% !important;
-          max-height: 100% !important;
-          border: none !important;
+       #previewLightbox .lightbox-canvas-box {
+          flex: 1 !important;
+          margin-bottom: 0 !important; 
+          border: none !important;             /* Kills the black border */
           border-radius: 0 !important;
-          box-shadow: none !important;
+          box-shadow: none !important;         /* Kills the shadow */
+          background: transparent !important;  /* Kills the white box */
+          padding: 0 !important; 
           display: flex !important;
-          flex-direction: column !important;
-          padding: 24px 24px 40px 24px !important;
-          box-sizing: border-box !important;
-          background: transparent !important;
+          align-items: flex-start !important;  /* Anchors it near the top */
+          justify-content: center !important;
+          min-height: 0 !important;
+          transform: scale(0.8) !important;    /* Shrinks the sticker sheet */
+          transform-origin: top center !important; /* Keeps it right under the buttons */
         }
 
         #previewLightbox #previewActions {
