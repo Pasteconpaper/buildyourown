@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=44">
+    <link rel="stylesheet" href="style.css?v=45">
     
     <style>
       @media (max-width: 768px) {
@@ -363,11 +363,12 @@
         </button>
       </div>
       
-      <div class="name-group ingredient-group" style="position: relative;">
-      <div class="dirty-canvas-overlay sharpie-hidden" style="display: block !important; top: -10px; right: 0px; width: 140px; height: 60px;">
-          <span class="sharpie-text" style="top: 0; right: 10px; font-size: 1.3rem; transform: rotate(-3deg);">Caution scrambler</span>
-          <svg style="position: absolute; top: 20px; right: 25px; width: 20px; height: 30px;" viewBox="0 0 20 30" fill="none" stroke="#F24822" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 0 L10 25 M3 18 L10 25 L17 18"/></svg>
+     <div class="name-group ingredient-group" style="position: relative;">
+        <label>Name Your Masterpiece</label>
+        <div id="comboContainer" class="combo-container">
+          <input type="text" id="stickerName" placeholder="e.g. El Jefe" maxlength="18" />
         </div>
+      </div>
 
         <label>Name Your Masterpiece</label>
         <div id="comboContainer" class="combo-container">
@@ -380,9 +381,9 @@
     <div class="pantry">
       <div class="pantry-grid" style="position: relative;">
         
-      <div class="dirty-canvas-overlay sharpie-hidden" style="display: block !important; top: 25px; left: 10px; width: 100px;">
-          <span class="sharpie-text" style="top: -20px; left: 0px; font-size: 1.2rem; transform: rotate(-8deg);">Use arrows</span>
-          <svg style="position: absolute; top: 0px; left: 15px; width: 20px; height: 30px;" viewBox="0 0 20 30" fill="none" stroke="#F24822" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 0 Q5 15 15 25 M5 20 L15 25 L15 15"/></svg>
+      <div class="dirty-canvas-overlay sharpie-hidden" style="display: block !important; top: 15px; left: 5px; width: 80px;">
+          <span class="sharpie-text" style="top: -25px; left: 0px; font-size: 1.2rem; transform: rotate(-8deg); text-align: center;">Use<br>arrows</span>
+          <svg style="position: absolute; top: 15px; left: 20px; width: 20px; height: 30px;" viewBox="0 0 20 30" fill="none" stroke="#F24822" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 0 Q5 15 15 25 M5 20 L15 25 L15 15"/></svg>
         </div>
         
         <div class="dirty-canvas-overlay sharpie-hidden" style="display: block !important; top: 130px; left: 50%; transform: translateX(-50%); width: 120px;">
@@ -470,9 +471,9 @@
       </div>
 
       <div class="closet-wrapper" style="position: relative;">
-       <div class="dirty-canvas-overlay sharpie-hidden" style="display: block !important; bottom: 100%; right: 10px; width: 160px; height: 40px; margin-bottom: 5px;">
-          <span class="sharpie-text" style="bottom: 10px; right: 35px; font-size: 1.5rem; transform: rotate(-2deg);">Add some fun</span>
-          <svg style="position: absolute; bottom: -5px; right: 5px; width: 30px; height: 25px;" viewBox="0 0 30 25" fill="none" stroke="#F24822" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M0 5 Q15 5 25 20 M15 20 L25 20 L20 10"/></svg>
+       <div class="dirty-canvas-overlay sharpie-hidden" style="display: block !important; top: -55px; right: 10px; width: 160px; height: 50px;">
+          <span class="sharpie-text" style="top: 0px; right: 35px; font-size: 1.5rem; transform: rotate(-2deg);">Add some fun</span>
+          <svg style="position: absolute; top: 15px; right: 5px; width: 30px; height: 25px;" viewBox="0 0 30 25" fill="none" stroke="#F24822" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M0 5 Q15 5 25 20 M15 20 L25 20 L20 10"/></svg>
         </div>
         
         <button id="closetToggleBtn" class="closet-btn" onclick="window.toggleCloset()">Open Closet</button>
