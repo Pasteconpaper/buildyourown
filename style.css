@@ -285,3 +285,12 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
 @media (min-width: 769px) {
   .dirty-canvas-overlay { display: none !important; }
 }
+.sharpie-text {
+        font-family: 'Caveat', cursive !important;
+        color: #F24822 !important;
+        position: absolute;
+        pointer-events: none;
+        z-index: 1000;
+        white-space: nowrap;
+        line-height: 1;
+      }
