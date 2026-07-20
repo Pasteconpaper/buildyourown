@@ -261,3 +261,27 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
     margin-bottom: -60px; 
   }
 }
+/* --------------------------------------------------- */
+/* NEW UX: DIRTY CANVAS OVERLAYS                       */
+/* --------------------------------------------------- */
+.dirty-canvas-overlay {
+  position: absolute;
+  pointer-events: none; 
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+.dirty-canvas-overlay svg {
+  width: 100%;
+  height: auto;
+  overflow: visible; /* Prevents edges of the Sharpie from getting clipped */
+}
+.dirty-canvas-overlay.sharpie-hidden {
+  opacity: 0 !important;
+}
+/* Hide the mobile SVG trace on Desktop sizes */
+@media (min-width: 769px) {
+  .dirty-canvas-overlay { display: none !important; }
+}
