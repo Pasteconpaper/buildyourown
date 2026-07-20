@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=51">
+    <link rel="stylesheet" href="style.css?v=52">
     
     <style>
       @media (max-width: 768px) {
@@ -130,40 +130,43 @@
           box-shadow: none !important;
           display: flex !important;
           flex-direction: column !important;
-          padding: 40px 24px 60px 24px !important; /* 40px top padding clears the iOS notch */
+          padding: 30px 20px 40px 20px !important; /* Slightly reduced top padding */
           box-sizing: border-box !important;
           background: transparent !important;
         }
 
+        /* 1. PUT BUTTONS SIDE-BY-SIDE */
         #previewLightbox #previewActions {
           display: flex !important;
-          flex-direction: column !important;
-          gap: 16px !important;
-          margin: 0 0 24px 0 !important; 
+          flex-direction: row !important; /* The magic swap from column to row */
+          gap: 12px !important;
+          margin: 0 0 20px 0 !important; 
+          width: 100% !important;
         }
 
         #previewLightbox #previewActions button {
-          width: 100% !important;
-          height: 64px !important; 
-          font-size: 1.25rem !important;
+          flex: 1 !important; /* Forces buttons to share 50/50 space */
+          height: 56px !important; /* Slightly shorter for mobile */
+          font-size: 1.05rem !important; /* Fits text nicely on narrow screens */
           margin: 0 !important;
+          padding: 0 8px !important;
         }
 
-        /* 1. Kills the white box, shadow, and border completely */
+        /* 2. SHRINK CANVAS PROPORTIONALLY VIA PADDING */
         #previewLightbox .lightbox-canvas-box {
           border: none !important;
           border-radius: 0 !important;
           box-shadow: none !important;
           background: transparent !important;
-          padding: 0 !important;
+          padding: 0 35px !important; /* Squeezing the sides forces the height to shrink! */
           margin: 0 auto !important;
           display: flex !important;
           justify-content: center !important;
-          transform: none !important; /* Kills the buggy scale trick */
+          transform: none !important; 
           width: 100% !important;
+          box-sizing: border-box !important;
         }
 
-        /* 2. Forces the raw sticker canvas to perfectly shrink-to-fit your phone */
         #previewLightbox .canvas-container,
         #previewLightbox canvas {
           max-width: 100% !important;
@@ -171,7 +174,7 @@
         }
 
         #previewLightbox p {
-          margin-top: 24px !important;
+          margin-top: 20px !important;
           font-size: 0.75rem !important;
           text-align: center !important;
         }
