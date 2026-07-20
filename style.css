@@ -264,7 +264,7 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
     text-shadow: 4px 4px 0px #000 !important;
     letter-spacing: 1px !important;
   }
-} /* THIS BRACKET WAS MISSING! */
+}
 
 @media (max-width: 450px) {
   .cutting-board { 
@@ -272,7 +272,7 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
     transform-origin: center top; 
     margin-bottom: -60px; 
   }
-} /* THIS BRACKET WAS ALSO MISSING! */
+}
 
 /* --------------------------------------------------- */
 /* NEW UX: DIRTY CANVAS OVERLAYS                       */
