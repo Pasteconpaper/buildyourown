@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=40">
+    <link rel="stylesheet" href="style.css?v=41">
     
     <style>
       @media (max-width: 768px) {
@@ -338,7 +338,11 @@
     
    <div class="cutting-board" style="position: relative;">
         
-        <div class="dirty-canvas-overlay sharpie-hidden" style="top: -20px; left: 0; width: 100%;">
+     <div class="dirty-canvas-overlay sharpie-hidden" style="top: 0; left: 0; width: 100%; height: 100%;">
+          
+          <span class="sharpie-text" style="top: 15px; left: 50%; transform: translateX(-50%) rotate(-2deg); font-size: 2rem;">Your Design Lives here</span>
+          <span class="sharpie-text" style="bottom: 10px; left: 50%; transform: translateX(-50%) rotate(1deg); font-size: 1.8rem;">tools live below</span>
+          
           </div>
         
         <canvas id="stickerCanvas"></canvas>
@@ -436,7 +440,10 @@
 
      <div class="closet-wrapper" style="position: relative;">
         
-        <div class="dirty-canvas-overlay sharpie-hidden" style="bottom: 100%; left: 0; width: 100%; margin-bottom: -15px;">
+        <div class="dirty-canvas-overlay sharpie-hidden" style="bottom: 100%; right: 20px; width: auto; margin-bottom: -15px; display: flex; align-items: flex-end; gap: 8px;">
+          
+          <span class="sharpie-text" style="position: relative; font-size: 1.6rem; transform: rotate(-2deg); bottom: 15px;">Add some fun</span>
+          
           </div>
         
         <button id="closetToggleBtn" class="closet-btn" onclick="window.toggleCloset()">Open Closet</button>
@@ -476,7 +483,10 @@
       
       <div class="name-group ingredient-group" style="position: relative;">
         
-        <div class="dirty-canvas-overlay sharpie-hidden" style="top: -50px; right: 0px; width: 180px;">
+        <div class="dirty-canvas-overlay sharpie-hidden" style="top: -45px; right: 10px; width: auto; display: flex; flex-direction: column; align-items: center;">
+          
+          <span class="sharpie-text" style="position: relative; font-size: 1.4rem; transform: rotate(-3deg);">Caution scrambler</span>
+          
           </div>
         
         <label>Name Your Masterpiece</label>
