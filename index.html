@@ -112,19 +112,19 @@
           padding: 0 !important;
         }
         
-      #previewLightbox {
+    /* VIRTUAL PAGE: MOBILE PREVIEW HIJACK */
+        #previewLightbox {
           background-color: #f7f6f1 !important; 
           padding: 0 !important;
-          align-items: flex-start !important; /* Forces it to start at the absolute top */
-          overflow-y: auto !important;        /* Allows scrolling if the screen is tiny */
+          align-items: flex-start !important; 
+          overflow-y: auto !important;
         }
         
         #previewLightbox .lightbox-modal {
           width: 100% !important;
-          height: auto !important;            /* Lets the modal grow/scroll naturally */
+          height: auto !important;
           min-height: 100% !important;
           max-width: 100% !important;
-          max-height: none !important;
           border: none !important;
           border-radius: 0 !important;
           box-shadow: none !important;
@@ -139,7 +139,7 @@
           display: flex !important;
           flex-direction: column !important;
           gap: 16px !important;
-          margin: 0 0 16px 0 !important; 
+          margin: 0 0 24px 0 !important; 
         }
 
         #previewLightbox #previewActions button {
@@ -149,23 +149,31 @@
           margin: 0 !important;
         }
 
+        /* 1. Kills the white box, shadow, and border completely */
         #previewLightbox .lightbox-canvas-box {
-          flex: 1 !important;
-          margin-bottom: 16px !important; 
-          border: 4px solid #000 !important;
-          border-radius: 16px !important;
-          box-shadow: 6px 6px 0px #000 !important;
-          background: #fff !important;
-          padding: 16px !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          background: transparent !important;
+          padding: 0 !important;
+          margin: 0 auto !important;
           display: flex !important;
-          align-items: center !important;
           justify-content: center !important;
-          min-height: 0 !important;
+          transform: none !important; /* Kills the buggy scale trick */
+          width: 100% !important;
+        }
+
+        /* 2. Forces the raw sticker canvas to perfectly shrink-to-fit your phone */
+        #previewLightbox .canvas-container,
+        #previewLightbox canvas {
+          max-width: 100% !important;
+          height: auto !important;
         }
 
         #previewLightbox p {
-          margin-bottom: 16px !important;
+          margin-top: 24px !important;
           font-size: 0.75rem !important;
+          text-align: center !important;
         }
       }
 
