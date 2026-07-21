@@ -177,9 +177,17 @@
           margin-top: 20px !important;
           font-size: 0.75rem !important;
           text-align: center !important;
-        }
-      }
+          /* Hide it universally first */
+.desktop-only-note {
+  display: none;
+}
 
+/* Reveal it only when the screen gets wide enough */
+@media (min-width: 769px) {
+  .desktop-only-note {
+    display: list-item; 
+  }
+}
       /* --------------------------------------------------- */
       /* NEW UX: ORDER TICKET, DIRTY CANVAS, HELP BTN        */
       /* --------------------------------------------------- */
