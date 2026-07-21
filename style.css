@@ -136,7 +136,7 @@ input[type="text"] { width: 100%; background: #fbfbf6; color: #1a1a1a; border: 4
 input[type="text"]:focus { border-color: #ea7316; box-shadow: 4px 4px 0px #ea7316; }
 input[type="text"]::placeholder { color: #888; font-weight: normal; }
 
-/* THE CUTTING BOARD SPACE (UPDATED TO PERFECT SQUARE FOR 1:1 MODEL) */
+/* THE CUTTING BOARD SPACE */
 .cutting-board-wrapper { position: relative; display: flex; flex-direction: column; width: 400px; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15); }
 .cutting-board { position: relative; width: 400px; height: 400px; border: none !important; background: transparent !important; border-radius: 0px; overflow: visible; box-shadow: none !important; }
 
@@ -238,28 +238,6 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
   background-color: #d32f2f !important; 
 }
 
-/* --- MOBILE RESPONSIVE LAYOUT --- */
-@media (max-width: 800px) {
-  .kitchen-container { flex-direction: column; align-items: center; gap: 25px; }
-  
-  .cutting-board-wrapper { order: 1; width: 100%; max-width: 400px; position: relative; left: auto; transform: none; }
-  .pantry { order: 2; width: 100%; max-width: 400px; height: auto; gap: 0px; justify-content: flex-start; }
-  .pantry-grid { gap: 15px 10px; }
-
-  .canvas-actions#editActions { 
-    order: -1; 
-    margin-bottom: 25px; 
-  }
-}
-
-@media (max-width: 450px) {
-  .cutting-board { 
-    transform: scale(0.85); 
-    transform-origin: center top; 
-    margin-bottom: -60px; 
-  }
-}
-
 /* --------------------------------------------------- */
 /* NEW UX: DIRTY CANVAS OVERLAYS                       */
 /* --------------------------------------------------- */
@@ -289,7 +267,280 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
   white-space: nowrap;
   line-height: 1;
 }
-/* Hide the mobile SVG trace on Desktop sizes */
+
+/* --------------------------------------------------- */
+/* NEW UX: ORDER TICKET & HELP BTN                     */
+/* --------------------------------------------------- */
+.help-btn {
+  width: 36px;
+  height: 36px;
+  background: #fff;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.help-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0px 0px 0 #000;
+}
+
+.ticket-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  transition: transform 0.6s cubic-bezier(0.8, 0, 0.2, 1), opacity 0.6s;
+}
+.ticket-overlay.ticket-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ticket-paper {
+  background: #fdfae5; 
+  border: 4px solid #000;
+  filter: drop-shadow(8px 8px 0px #000);
+  padding: 32px 24px 24px 24px;
+  width: 100%; 
+  max-width: 400px;
+  position: relative;
+  color: #000;
+  border-top: none;
+  -webkit-mask-image: radial-gradient(circle at 12px 0, transparent 12px, black 13px);
+  -webkit-mask-size: 24px 100%;
+  -webkit-mask-repeat: repeat-x;
+  mask-image: radial-gradient(circle at 12px 0, transparent 12px, black 13px);
+  mask-size: 24px 100%;
+  mask-repeat: repeat-x;
+}
+.ticket-paper h2 {
+  margin-top: 0;
+  font-size: 1.75rem;
+  text-transform: uppercase;
+  border-bottom: 3px dashed #8ebdd6;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+.ticket-divider {
+  border-top: 3px dashed #8ebdd6;
+  margin: 20px 0;
+}
+.ticket-paper ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+.ticket-paper li {
+  margin-bottom: 12px;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+.ticket-paper li span {
+  font-weight: normal;
+  font-size: 0.85rem;
+  color: #555;
+  display: block;
+}
+.order-btn {
+  width: 100%;
+  height: 64px;
+  font-size: 1.5rem;
+  background: #F24822;
+  color: #fff;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 16px;
+}
+.order-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0 #000;
+}
+
+/* DESKTOP-ONLY NOTE HIDDEN BY DEFAULT */
+.desktop-only-note {
+  display: none;
+}
+
+/* --- MEDIA QUERIES (DESKTOP) --- */
 @media (min-width: 769px) {
+  /* Hide the mobile SVG trace on Desktop sizes */
   .dirty-canvas-overlay { display: none !important; }
+  /* Reveal the pro-tip on Desktop */
+  .desktop-only-note { display: list-item; }
+}
+
+/* --- MEDIA QUERIES (MOBILE RESPONSIVE LAYOUT) --- */
+@media (max-width: 800px) {
+  .kitchen-container { flex-direction: column; align-items: center; gap: 25px; }
+  .cutting-board-wrapper { order: 1; width: 100%; max-width: 400px; position: relative; left: auto; transform: none; }
+  .pantry { order: 2; width: 100%; max-width: 400px; height: auto; gap: 0px; justify-content: flex-start; }
+  .pantry-grid { gap: 15px 10px; }
+  .canvas-actions#editActions { 
+    order: -1; 
+    margin-bottom: 25px; 
+  }
+}
+
+@media (max-width: 768px) {
+  /* FLUSH HEADER */
+  body {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    min-height: 100dvh; 
+  }
+  .app-wrapper {
+    padding-top: 16px !important; 
+  }
+  .app-header {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 16px !important;
+    margin-bottom: 16px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+  }
+  .app-header h1 {
+    font-size: 1.75rem !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+  }
+  .app-header p {
+    display: none !important;
+  }
+  .name-group label {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+    padding-right: 66px !important; 
+    box-sizing: border-box !important;
+  }
+  .combo-container {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+  .combo-container input[type="text"] {
+    flex: 1 !important;
+    height: 54px !important;
+    margin: 0 !important;
+    width: auto !important;
+    box-sizing: border-box !important;
+  }
+  .combo-container .loco-btn {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    width: 54px !important;
+    height: 54px !important;
+    padding: 8px !important;
+    box-sizing: border-box !important;
+  }
+  #editActions {
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+  }
+  .pantry-grid {
+    margin-top: -20px !important;
+  }
+  .closet-wrapper {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+  .cutting-board-wrapper {
+    display: flex;
+    flex-direction: column;
+  }
+  #previewLightbox {
+    background-color: #f7f6f1 !important; 
+    padding: 0 !important;
+    align-items: flex-start !important; 
+    overflow-y: auto !important;
+  }
+  #previewLightbox .lightbox-modal {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 30px 20px 40px 20px !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+  }
+  #previewLightbox #previewActions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 12px !important;
+    margin: 0 0 20px 0 !important; 
+    width: 100% !important;
+  }
+  #previewLightbox #previewActions button {
+    flex: 1 !important; 
+    height: 56px !important; 
+    font-size: 1.05rem !important; 
+    margin: 0 !important;
+    padding: 0 8px !important;
+  }
+  #previewLightbox .lightbox-canvas-box {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 35px !important; 
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    transform: none !important; 
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  #previewLightbox .canvas-container,
+  #previewLightbox canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  #previewLightbox p {
+    margin-top: 20px !important;
+    font-size: 0.75rem !important;
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 450px) {
+  .cutting-board { 
+    transform: scale(0.85); 
+    transform-origin: center top; 
+    margin-bottom: -60px; 
+  }
 }
