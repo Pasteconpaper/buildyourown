@@ -252,29 +252,6 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
   }
 }
 
-@media (max-width: 600px) {
-.app-header h1 {
-          font-size: 2.2rem !important;
-          margin: 0 !important;
-          line-height: 1 !important;
-          color: #F24822 !important; /* The brand orange */
-          -webkit-text-stroke: 2px #000 !important; /* Hard black border */
-          text-shadow: 4px 4px 0px #000 !important; /* Brutalist shadow */
-          letter-spacing: 1px !important;
-        }
-
-@media (max-width: 600px) {
-  .app-header h1 {
-    font-size: 2.2rem !important;
-    margin: 0 !important;
-    line-height: 1 !important;
-    color: #F24822 !important;
-    -webkit-text-stroke: 2px #000 !important;
-    text-shadow: 4px 4px 0px #000 !important;
-    letter-spacing: 1px !important;
-  }
-}
-
 @media (max-width: 450px) {
   .cutting-board { 
     transform: scale(0.85); 
