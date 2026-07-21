@@ -97,7 +97,27 @@ function enforceLayering() {
   for (let i = 0; i < objects.length; i++) { if (objects[i].customLayer === 'accessory') canvas.bringToFront(objects[i]); }
 }
 
-function saveCurrentState() { currentStateJSON = JSON.stringify(canvas); }
+function saveCurrentState() { 
+  currentStateJSON = JSON.stringify(canvas); 
+  
+  // Bundle the entire session into one object
+  const autoSaveBundle = {
+    canvas: canvas.toJSON(),
+    rigColors: rigColors,
+    indices: indices,
+    scrambleCount: scrambleCount,
+    stickerName: document.getElementById('stickerName') ? document.getElementById('stickerName').value : ""
+  };
+  
+  // Save it to the browser's local storage
+  localStorage.setItem('laStickeria_autoSave', JSON.stringify(autoSaveBundle));
+}
+
+// Make sure typing in the name field also triggers a save!
+document.addEventListener('DOMContentLoaded', () => {
+  const nameInput = document.getElementById('stickerName');
+  if (nameInput) nameInput.addEventListener('input', saveCurrentState);
+});
 
 function pushToUndoStack(state) {
   if (!state) return;
@@ -519,6 +539,11 @@ window.clearCanvas = function() {
 
 window.confirmStartOver = function() {
   playPopSound();
+  
+  // Wipe the memory and the name input
+  localStorage.removeItem('laStickeria_autoSave');
+  if(document.getElementById('stickerName')) document.getElementById('stickerName').value = "";
+  
   document.getElementById('startOverLightbox').style.display = 'none';
   scrambleCount = 5;
   const counterUI = document.getElementById('scrambleCounter');
@@ -847,6 +872,11 @@ window.sendToKitchen = async function() {
 
         if (response.ok) {
             console.log("Image safely stored at:", result.secure_url);
+            
+            // Clear the save file after a successful order
+            localStorage.removeItem('laStickeria_autoSave');
+            if(document.getElementById('stickerName')) document.getElementById('stickerName').value = "";
+            
             window.togglePreview();
             document.getElementById('successLightbox').style.display = 'flex';
         } else {
@@ -973,13 +1003,53 @@ window.bypassAndPrint = bypassAndPrint;
 window.addAccessory = addAccessory;
 window.toggleCloset = toggleCloset;
 window.closeSuccessModal = closeSuccessModal;
-window.playIntroScramble = playIntroScramble; // NEW: Expose to the HTML
+window.playIntroScramble = playIntroScramble;
 
+// --- BOOT UP & RESTORE SEQUENCE ---
 initColorPickers(); 
 renderCarousels(); 
 renderCloset(); 
 
-// NEW: Only play the animation immediately if they skip the ticket
-if (localStorage.getItem('laStickeria_hasSeenTicket')) {
-  playIntroScramble();
+const savedSession = localStorage.getItem('laStickeria_autoSave');
+
+if (savedSession) {
+  try {
+    // 1. Parse the saved data
+    const parsed = JSON.parse(savedSession);
+    
+    // 2. Restore the data variables
+    Object.assign(rigColors, parsed.rigColors);
+    Object.assign(indices, parsed.indices);
+    scrambleCount = parsed.scrambleCount;
+    
+    // 3. Restore the Name Input and Scramble Counter UI
+    if (document.getElementById('stickerName')) {
+      document.getElementById('stickerName').value = parsed.stickerName || "";
+    }
+    const counterUI = document.getElementById('scrambleCounter');
+    if (counterUI) {
+      counterUI.innerText = scrambleCount;
+      if (scrambleCount === 0) document.getElementById('scrambleBtn').classList.add('depleted');
+    }
+    
+    // 4. Tell Fabric.js to redraw the canvas from memory
+    canvas.loadFromJSON(parsed.canvas, () => {
+      canvas.renderAll();
+      enforceLayering();
+      renderCarousels();
+      initColorPickers();
+      updateClosetUI();
+      saveCurrentState(); // Re-initializes the undo stack 
+    });
+    
+  } catch (e) {
+    console.error("Save file corrupted, starting fresh", e);
+    localStorage.removeItem('laStickeria_autoSave');
+    if (localStorage.getItem('laStickeria_hasSeenTicket')) playIntroScramble();
+  }
+} else {
+  // If no save exists, run the normal intro (if they've seen the ticket)
+  if (localStorage.getItem('laStickeria_hasSeenTicket')) {
+    playIntroScramble();
+  }
 }
