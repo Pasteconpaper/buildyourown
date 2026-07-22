@@ -113,12 +113,55 @@ function saveCurrentState() {
   localStorage.setItem('laStickeria_autoSave', JSON.stringify(autoSaveBundle));
 }
 
-// Make sure typing in the name field also triggers a save!
+// Make sure typing in the name field triggers a save, AND listens for Easter Eggs!
 document.addEventListener('DOMContentLoaded', () => {
   const nameInput = document.getElementById('stickerName');
-  if (nameInput) nameInput.addEventListener('input', saveCurrentState);
+  if (nameInput) {
+    nameInput.addEventListener('input', (e) => {
+      saveCurrentState(); // Your auto-save
+      
+      // THE EASTER EGG LISTENER
+      if (e.target.value.toLowerCase() === 'zombie filter') {
+        triggerZombieEasterEgg();
+      }
+    });
+  }
 });
 
+function triggerZombieEasterEgg() {
+  playPopSound();
+  pushToUndoStack(currentStateJSON); // Save their previous work so they don't lose it!
+  
+  // 1. Wipe the current canvas parts
+  canvas.getObjects().filter(o => o.rigPart).forEach(obj => canvas.remove(obj));
+  
+  // 2. Inject the exact Zombie DNA
+  rigColors.body = '#00e676';
+  rigColors.hair = '#ff1744';
+  rigColors.eye = '#ff1744';
+  rigColors.mouth = '#000000';
+  rigColors.arm = '#AAFFCC';
+  rigColors.leg = '#00e676';
+  
+  indices.body = 0; // Square
+  indices.hair = 0; // Arches
+  indices.eye = 1;  // Mad Eyes
+  indices.mouth = 1; // Open Smile
+  indices.arm = 0;  // Macaroni
+  indices.leg = 0;  // Lump
+  
+  // 3. Rebuild the character and update UI
+  renderCarousels();
+  initColorPickers();
+  buildCreature(false, true);
+  
+  // 4. Add the Top Hat accessory
+  // We wrap this in a tiny timeout to ensure the body renders first so the hat lands properly
+  setTimeout(() => {
+    window.addAccessory('top_hat');
+    popAnimation(canvas.getObjects()); // Add a fun visual pop!
+  }, 50);
+}
 function pushToUndoStack(state) {
   if (!state) return;
   undoStack.push(state);
@@ -488,7 +531,8 @@ window.randomizeCreature = function() {
     const picasso = Math.random() > 0.95;
     categories.forEach(cat => {
       if (cat === 'body') return; const targets = activeObjects.filter(o => o.rigPart === cat); if (!targets.length) return;
-      const rS = picasso ? (0.7 + Math.random() * 0.7) : (0.9 + Math.random() * 0.2);
+      // Scale up to 2x! (0.5x to 2.0x for picasso mode, 0.8x to 1.5x for normal mode)
+      const rS = picasso ? (0.5 + Math.random() * 1.5) : (0.8 + Math.random() * 0.7);      
       const rR = picasso ? ((Math.random() - 0.5) * 60) : ((Math.random() - 0.5) * 20);
       const pY = (Math.random() - 0.5) * 160, pX = (Math.random() - 0.5) * 80;
       targets.forEach((obj, index) => {
