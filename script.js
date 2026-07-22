@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveCurrentState(); // Your auto-save
       
       // THE EASTER EGG LISTENER
-      if (e.target.value.toLowerCase() === 'zombie filter') {
+      if (e.target.value.toLowerCase().trim() === 'zombie filter') {
         triggerZombieEasterEgg();
       }
     });
@@ -162,6 +162,7 @@ function triggerZombieEasterEgg() {
     popAnimation(canvas.getObjects()); // Add a fun visual pop!
   }, 50);
 }
+
 function pushToUndoStack(state) {
   if (!state) return;
   undoStack.push(state);
@@ -996,7 +997,7 @@ window.addEventListener('keyup', e => {
   }
 });
 
-function playIntroScramble() {
+window.playIntroScramble = function() {
   let flashCount = 0;
   const maxFlashes = 12; 
   const speed = 120;     
@@ -1032,22 +1033,6 @@ function playIntroScramble() {
     }
   }, speed);
 }
-
-window.randomizeCreature = randomizeCreature;
-window.undo = undo;
-window.clearCanvas = clearCanvas;
-window.confirmStartOver = confirmStartOver;
-window.cancelStartOver = cancelStartOver;
-window.togglePreview = togglePreview;
-window.swapRigElement = swapRigElement;
-window.toggleColorPicker = toggleColorPicker;
-window.sendToKitchen = sendToKitchen;
-window.abortAndRename = abortAndRename;
-window.bypassAndPrint = bypassAndPrint;
-window.addAccessory = addAccessory;
-window.toggleCloset = toggleCloset;
-window.closeSuccessModal = closeSuccessModal;
-window.playIntroScramble = playIntroScramble;
 
 // --- BOOT UP & RESTORE SEQUENCE ---
 initColorPickers(); 
@@ -1089,11 +1074,11 @@ if (savedSession) {
   } catch (e) {
     console.error("Save file corrupted, starting fresh", e);
     localStorage.removeItem('laStickeria_autoSave');
-    if (localStorage.getItem('laStickeria_hasSeenTicket')) playIntroScramble();
+    if (localStorage.getItem('laStickeria_hasSeenTicket')) window.playIntroScramble();
   }
 } else {
   // If no save exists, run the normal intro (if they've seen the ticket)
   if (localStorage.getItem('laStickeria_hasSeenTicket')) {
-    playIntroScramble();
+    window.playIntroScramble();
   }
 }
