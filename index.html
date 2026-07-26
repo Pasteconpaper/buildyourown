@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
   
   <!-- This single file handles ALL of your styling now -->
-  <link rel="stylesheet" href="style.css?v=65">
+  <link rel="stylesheet" href="style.css?v=66">
 </head>
   
   <body>
@@ -70,7 +70,7 @@
 <header class="app-header">
     
     <div style="display: flex; align-items: center; justify-content: flex-start; flex-grow: 1;">
-       <img src="https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/f4ab39f8-27de-42ee-af66-f997d1dde9eb/Logo.png?content-type=image%2Fpng" alt="La Stickería" style="max-height: 50px; width: auto;" />
+       <img id="appLogo" src="https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/f4ab39f8-27de-42ee-af66-f997d1dde9eb/Logo.png?content-type=image%2Fpng" alt="La Stickería" style="max-height: 50px; width: auto; cursor: pointer;" onclick="window.handleLogoTap()" />
     </div>
 
     <button id="helpBtn" class="help-btn" onclick="window.smartHelpAction(event)" title="Show Help">?</button>
@@ -267,6 +267,37 @@
   </div>
 </div>
 
-<script src="script.js?v=41"></script>
+<div id="bakerAdminModal" class="lightbox-overlay" style="display: none;">
+  <div class="prompt-box admin-box">
+    <div id="bakerPinGate">
+      <h2>Baker's Kitchen</h2>
+      <p>Enter secret 4-digit PIN to access your Mobile Print Queue</p>
+      <div style="margin-bottom: 20px; width: 100%;">
+        <input type="password" id="bakerPinInput" placeholder="••••" maxlength="4" style="letter-spacing: 10px; font-size: 1.6rem;" />
+        <p id="pinErrorMsg" style="color: #ff1744; font-size: 0.85rem; margin-top: 8px; display: none; font-weight: bold;">Incorrect PIN. Try again!</p>
+      </div>
+      <div class="action-row">
+        <button class="control-btn" onclick="window.closeBakerAdmin()">Cancel</button>
+        <button class="bake-btn" onclick="window.verifyBakerPin()">Enter</button>
+      </div>
+    </div>
+
+    <div id="bakerPrintQueue" style="display: none; width: 100%;">
+      <h2>Print Queue</h2>
+      <p style="margin-bottom: 12px;">Saved Sticker Orders for Liene PixCut S1</p>
+      
+      <div id="bakerOrderList" class="order-list-container">
+        <!-- Dynamically rendered order cards -->
+      </div>
+
+      <div class="action-row" style="margin-top: 16px;">
+        <button class="control-btn" onclick="window.refreshPrintQueue()">Refresh</button>
+        <button class="bake-btn" onclick="window.closeBakerAdmin()">Close Queue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js?v=42"></script>
   </body>
 </html>
