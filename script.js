@@ -1,11 +1,3 @@
-// --- AUTO-INJECT CSS TO CONTAIN THE NEW MASSIVE CANVAS IN THE UI ---
-const previewStyleFix = document.createElement('style');
-previewStyleFix.innerHTML = `
-  .lightbox-canvas-box .canvas-container { width: 100% !important; height: auto !important; aspect-ratio: 1075 / 1854; position: relative; }
-  .lightbox-canvas-box canvas { width: 100% !important; height: 100% !important; position: absolute !important; top: 0; left: 0; }
-`;
-document.head.appendChild(previewStyleFix);
-
 // 1. GLOBAL APP STATE INITIALIZATION
 const canvas = new fabric.Canvas('stickerCanvas', { width: 400, height: 400, backgroundColor: 'transparent', preserveObjectStacking: true, allowTouchScrolling: true });
 // EXACT PRINTER ASPECT RATIO (Target 2150x3708 / 2 = 1075x1854)
@@ -772,68 +764,72 @@ function renderPreviewSheetGrid(cleanImgUrl, cutlineImgUrl, cWidth, cHeight, pre
         const startX = sideMargin + (usableWidth - (cols * finalImgW + (cols - 1) * stickerGap)) / 2;
         const startY = headerHeight + topBuffer + (gridHeight - (rows * finalImgH + (rows - 1) * stickerGap)) / 2;
 
-        let loadedCount = 0;
-        
-        for(let r = 0; r < rows; r++) {
-            for(let c = 0; c < cols; c++) {
-                const targetLeft = startX + c * (finalImgW + stickerGap);
-                const targetTop = startY + r * (finalImgH + stickerGap);
+        Promise.all([
+            new Promise(res => fabric.Image.fromURL(cleanImgUrl, res, { crossOrigin: 'anonymous' })),
+            new Promise(res => fabric.Image.fromURL(cutlineImgUrl, res, { crossOrigin: 'anonymous' }))
+        ]).then(([baseCleanImg, baseCutlineImg]) => {
+            if (!baseCleanImg || !baseCutlineImg) return;
 
-                fabric.Image.fromURL(cleanImgUrl, function(img) {
-                    img.set({ 
-                        left: targetLeft, top: targetTop, 
-                        scaleX: scaleFactor / 2, scaleY: scaleFactor / 2, 
-                        originX: 'left', originY: 'top', selectable: false, shadow: null 
+            for(let r = 0; r < rows; r++) {
+                for(let c = 0; c < cols; c++) {
+                    const targetLeft = startX + c * (finalImgW + stickerGap);
+                    const targetTop = startY + r * (finalImgH + stickerGap);
+
+                    baseCleanImg.clone(function(img) {
+                        img.set({ 
+                            left: targetLeft, top: targetTop, 
+                            scaleX: scaleFactor / 2, scaleY: scaleFactor / 2, 
+                            originX: 'left', originY: 'top', selectable: false, shadow: null 
+                        });
+                        previewCanvasObj.add(img); 
                     });
-                    previewCanvasObj.add(img); 
-                    loadedCount++;
-                    
-                    if(loadedCount === rows * cols && !window.globalBypassNameSticker) {
-                        const nameplateY = previewCanvasObj.height - 230;
-                        const nameplateX = previewCanvasObj.width / 2;
 
-                        const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
-                        const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
-                        const nameShield = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, rx: 28, ry: 28, originX: 'center', originY: 'center' });
-                        
-                        const targetCutWidth = nameShield.width + nameShield.strokeWidth;
-                        const targetCutHeight = nameShield.height + nameShield.strokeWidth;
-
-                        const nameplateCutline = new fabric.Rect({
-                            width: targetCutWidth, height: targetCutHeight,
-                            rx: nameShield.rx + (nameShield.strokeWidth / 2),
-                            ry: nameShield.ry + (nameShield.strokeWidth / 2),
-                            fill: 'transparent', stroke: '#00FFFF', strokeWidth: 3, strokeDashArray: [8, 8],
-                            left: nameplateX, top: nameplateY, originX: 'center', originY: 'center', 
-                            selectable: false, evented: false,
+                    baseCutlineImg.clone(function(cutImg) {
+                        cutImg.set({
+                            left: targetLeft, top: targetTop,
+                            scaleX: scaleFactor / 2, scaleY: scaleFactor / 2,
+                            originX: 'left', originY: 'top', selectable: false, evented: false,
                             isVisualCutline: true
                         });
-
-                        const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { 
-                            left: nameplateX, top: nameplateY, originX: 'center', originY: 'center', selectable: false, shadow: null 
-                        });
-                        nameGroup.isNameplate = true; 
-                        
-                        previewCanvasObj.add(nameGroup, nameplateCutline);
-                    }
-
-                    previewCanvasObj.getObjects().forEach(o => {
-                        if (o.isVisualCutline) o.bringToFront();
+                        previewCanvasObj.add(cutImg);
                     });
-                    previewCanvasObj.renderAll();
-                }, { crossOrigin: 'anonymous' });
-
-                fabric.Image.fromURL(cutlineImgUrl, function(cutImg) {
-                    cutImg.set({
-                        left: targetLeft, top: targetTop,
-                        scaleX: scaleFactor / 2, scaleY: scaleFactor / 2,
-                        originX: 'left', originY: 'top', selectable: false, evented: false,
-                        isVisualCutline: true
-                    });
-                    previewCanvasObj.add(cutImg);
-                });
+                }
             }
-        }
+
+            if(!window.globalBypassNameSticker) {
+                const nameplateY = previewCanvasObj.height - 230;
+                const nameplateX = previewCanvasObj.width / 2;
+
+                const nameText = new fabric.Text(window.globalSelectedName, { fontSize: 31, fontWeight: 'bold', fontFamily: 'Helvetica Neue, Arial, sans-serif', fill: '#ff9800', originX: 'center', originY: 'center' });
+                const nameBg = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ff9800', strokeWidth: 4.2, rx: 28, ry: 28, originX: 'center', originY: 'center' });
+                const nameShield = new fabric.Rect({ width: window.globalSelectedName ? nameText.width + 62 : 226, height: nameText.height + 34, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 24, rx: 28, ry: 28, originX: 'center', originY: 'center' });
+                
+                const targetCutWidth = nameShield.width + nameShield.strokeWidth;
+                const targetCutHeight = nameShield.height + nameShield.strokeWidth;
+
+                const nameplateCutline = new fabric.Rect({
+                    width: targetCutWidth, height: targetCutHeight,
+                    rx: nameShield.rx + (nameShield.strokeWidth / 2),
+                    ry: nameShield.ry + (nameShield.strokeWidth / 2),
+                    fill: 'transparent', stroke: '#00FFFF', strokeWidth: 3, strokeDashArray: [8, 8],
+                    left: nameplateX, top: nameplateY, originX: 'center', originY: 'center', 
+                    selectable: false, evented: false,
+                    isVisualCutline: true
+                });
+
+                const nameGroup = new fabric.Group([nameShield, nameBg, nameText], { 
+                    left: nameplateX, top: nameplateY, originX: 'center', originY: 'center', selectable: false, shadow: null 
+                });
+                nameGroup.isNameplate = true; 
+                
+                previewCanvasObj.add(nameGroup, nameplateCutline);
+            }
+
+            previewCanvasObj.getObjects().forEach(o => {
+                if (o.isVisualCutline) o.bringToFront();
+            });
+            previewCanvasObj.renderAll();
+        });
     }, { crossOrigin: 'anonymous' });
 }
 
@@ -894,10 +890,8 @@ window.sendToKitchen = async function() {
         const cloudName = "u05fp6zm";
         const uploadPreset = "izbfqsmq"; 
 
-        const base64DataString = "data:image/png;base64," + exportedDataUrl.split(',')[1];
-
         const formData = new FormData();
-        formData.append("file", base64DataString);
+        formData.append("file", exportedDataUrl);
         formData.append("upload_preset", uploadPreset);
         formData.append("tags", rawInput.toLowerCase());
 
@@ -1026,6 +1020,91 @@ window.playIntroScramble = function() {
     }
   }, speed);
 }
+
+// --- LAYOUT & ONBOARDING UX LOGIC ---
+function adjustMobileLayout() {
+  const kitchenContainer = document.querySelector('.kitchen-container');
+  const pantry = document.querySelector('.pantry');
+  const editActions = document.getElementById('editActions');
+  const scrambleBtn = document.getElementById('scrambleBtn');
+  const comboContainer = document.getElementById('comboContainer');
+  const cuttingBoard = document.querySelector('.cutting-board');
+  
+  if (!kitchenContainer || !pantry) return;
+
+  if (window.innerWidth <= 768) {
+    if (editActions && editActions.parentElement !== kitchenContainer) {
+      kitchenContainer.insertBefore(editActions, kitchenContainer.firstChild);
+    }
+    if (scrambleBtn && comboContainer && scrambleBtn.parentElement !== comboContainer) {
+      comboContainer.appendChild(scrambleBtn);
+    }
+  } else {
+    if (editActions && editActions.parentElement !== pantry) {
+      pantry.appendChild(editActions);
+    }
+    if (scrambleBtn && cuttingBoard && scrambleBtn.parentElement !== cuttingBoard) {
+      cuttingBoard.appendChild(scrambleBtn);
+    }
+  }
+}
+
+adjustMobileLayout();
+window.addEventListener('resize', adjustMobileLayout);
+
+function setupDirtyCanvas() {
+  if (window.innerWidth <= 768) {
+    setTimeout(() => {
+      document.querySelectorAll('.dirty-canvas-overlay').forEach(overlay => {
+        overlay.classList.remove('sharpie-hidden');
+      });
+    }, 600);
+  }
+}
+
+window.orderUp = function() {
+  const ticket = document.getElementById('ticketOverlay');
+  if (ticket) ticket.classList.add('ticket-hidden');
+  localStorage.setItem('laStickeria_hasSeenTicket', 'true');
+  
+  if (typeof window.playIntroScramble === 'function') {
+    window.playIntroScramble();
+  }
+  setupDirtyCanvas();
+};
+
+window.smartHelpAction = function(e) {
+  if (e && e.stopPropagation) e.stopPropagation(); 
+  if (window.innerWidth <= 768) {
+    document.querySelectorAll('.dirty-canvas-overlay').forEach(overlay => {
+      overlay.classList.remove('sharpie-hidden');
+    });
+  } else {
+    const ticket = document.getElementById('ticketOverlay');
+    if (ticket) ticket.classList.remove('ticket-hidden');
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const ticket = document.getElementById('ticketOverlay');
+  const hasSeenTicket = localStorage.getItem('laStickeria_hasSeenTicket');
+  
+  if (ticket && !hasSeenTicket) {
+    ticket.classList.remove('ticket-hidden');
+  } else {
+    setupDirtyCanvas();
+  }
+
+  document.body.addEventListener('click', (e) => {
+    if (e.target.id !== 'helpBtn') {
+      document.querySelectorAll('.dirty-canvas-overlay').forEach(overlay => {
+        if (!overlay.classList.contains('sharpie-hidden')) {
+          overlay.classList.add('sharpie-hidden');
+        }
+      });
+    }
+  });
+});
 
 // --- BOOT UP & RESTORE SEQUENCE ---
 initColorPickers(); 
