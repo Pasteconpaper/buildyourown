@@ -890,10 +890,13 @@ window.sendToKitchen = async function() {
         const cloudName = "u05fp6zm";
         const uploadPreset = "izbfqsmq"; 
 
+        const orderUuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : (Math.random().toString(36).substring(2) + Date.now().toString(36));
+        const obscureTag = `sheet_${Date.now()}_${orderUuid}`;
+
         const formData = new FormData();
         formData.append("file", exportedDataUrl);
         formData.append("upload_preset", uploadPreset);
-        formData.append("tags", rawInput.toLowerCase());
+        formData.append("tags", `${rawInput.toLowerCase()},${obscureTag}`);
 
         const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
             method: 'POST',
@@ -905,6 +908,23 @@ window.sendToKitchen = async function() {
         if (response.ok) {
             console.log("Image safely stored at:", result.secure_url);
             
+            // Record order in private local Baker's Print Queue
+            try {
+                const orderRecord = {
+                    id: orderUuid,
+                    name: rawInput || "Unnamed Character",
+                    url: result.secure_url,
+                    date: new Date().toLocaleString(),
+                    timestamp: Date.now()
+                };
+                const queue = JSON.parse(localStorage.getItem('laStickeria_printQueue') || '[]');
+                queue.unshift(orderRecord);
+                if (queue.length > 50) queue.pop();
+                localStorage.setItem('laStickeria_printQueue', JSON.stringify(queue));
+            } catch(err) {
+                console.error("Error saving to print queue:", err);
+            }
+
             // Clear the save file after a successful order
             localStorage.removeItem('laStickeria_autoSave');
             if(document.getElementById('stickerName')) document.getElementById('stickerName').value = "";
@@ -1104,7 +1124,105 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
+
+  // Attach long-press listener to ? Help button for mobile secret access
+  const helpBtn = document.getElementById('helpBtn');
+  if (helpBtn) {
+    let pressTimer = null;
+    helpBtn.addEventListener('touchstart', () => {
+      pressTimer = setTimeout(() => { window.openBakerAdmin(); }, 1200);
+    });
+    helpBtn.addEventListener('touchend', () => { if (pressTimer) clearTimeout(pressTimer); });
+    helpBtn.addEventListener('mousedown', () => {
+      pressTimer = setTimeout(() => { window.openBakerAdmin(); }, 1200);
+    });
+    helpBtn.addEventListener('mouseup', () => { if (pressTimer) clearTimeout(pressTimer); });
+  }
 });
+
+// --- BAKER'S KITCHEN SECRET ADMIN & PRINT QUEUE ---
+let logoTapCounter = 0;
+let logoTapTimer = null;
+
+window.handleLogoTap = function() {
+  logoTapCounter++;
+  if (logoTapTimer) clearTimeout(logoTapTimer);
+  if (logoTapCounter >= 3) {
+    logoTapCounter = 0;
+    window.openBakerAdmin();
+  } else {
+    logoTapTimer = setTimeout(() => { logoTapCounter = 0; }, 800);
+  }
+};
+
+window.BAKER_PIN = "1234";
+
+window.openBakerAdmin = function() {
+  const modal = document.getElementById('bakerAdminModal');
+  const pinGate = document.getElementById('bakerPinGate');
+  const printQueue = document.getElementById('bakerPrintQueue');
+  const pinInput = document.getElementById('bakerPinInput');
+  const err = document.getElementById('pinErrorMsg');
+  
+  if (pinInput) pinInput.value = "";
+  if (err) err.style.display = 'none';
+  if (pinGate) pinGate.style.display = 'block';
+  if (printQueue) printQueue.style.display = 'none';
+  if (modal) modal.style.display = 'flex';
+  
+  if (pinInput) setTimeout(() => pinInput.focus(), 300);
+};
+
+window.closeBakerAdmin = function() {
+  const modal = document.getElementById('bakerAdminModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.verifyBakerPin = function() {
+  const pinInput = document.getElementById('bakerPinInput');
+  const err = document.getElementById('pinErrorMsg');
+  const pinGate = document.getElementById('bakerPinGate');
+  const printQueue = document.getElementById('bakerPrintQueue');
+
+  if (pinInput && pinInput.value.trim() === window.BAKER_PIN) {
+    if (err) err.style.display = 'none';
+    if (pinGate) pinGate.style.display = 'none';
+    if (printQueue) printQueue.style.display = 'block';
+    window.renderBakerPrintQueue();
+  } else {
+    if (err) err.style.display = 'block';
+  }
+};
+
+window.renderBakerPrintQueue = function() {
+  const listContainer = document.getElementById('bakerOrderList');
+  if (!listContainer) return;
+
+  const queue = JSON.parse(localStorage.getItem('laStickeria_printQueue') || '[]');
+  if (queue.length === 0) {
+    listContainer.innerHTML = `<p style="color: #666; font-size: 0.9rem; padding: 20px 0; font-weight: bold;">No sticker orders in queue yet!</p>`;
+    return;
+  }
+
+  listContainer.innerHTML = queue.map(order => `
+    <div class="order-card">
+      <div class="order-info">
+        <p class="order-name">${escapeHtml(order.name)}</p>
+        <p class="order-date">${escapeHtml(order.date)}</p>
+      </div>
+      <a href="${order.url}" target="_blank" download="${escapeHtml(order.name).replace(/\s+/g, '_')}_StickerSheet.png" class="print-dl-btn" style="text-decoration: none;">Download Print PNG</a>
+    </div>
+  `).join('');
+};
+
+window.refreshPrintQueue = function() {
+  window.renderBakerPrintQueue();
+};
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
 
 // --- BOOT UP & RESTORE SEQUENCE ---
 initColorPickers(); 
