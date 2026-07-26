@@ -574,3 +574,67 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
     margin-bottom: -60px; 
   }
 }
+
+/* BAKER'S KITCHEN ADMIN PRINT QUEUE */
+.admin-box {
+  max-width: 440px !important;
+  width: 90% !important;
+  box-sizing: border-box;
+}
+.order-list-container {
+  max-height: 45vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 4px;
+  box-sizing: border-box;
+}
+.order-card {
+  background: #ffffff;
+  border: 3px solid #1a1a1a;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 3px 3px 0px #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.order-info {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.order-name {
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: var(--color-primary);
+  margin: 0;
+}
+.order-date {
+  font-size: 0.78rem;
+  color: #666;
+  margin: 0;
+  font-weight: bold;
+}
+.print-dl-btn {
+  background-color: var(--color-accent-green) !important;
+  color: #ffffff !important;
+  border: 2px solid #1a1a1a !important;
+  padding: 8px 14px !important;
+  font-size: 0.85rem !important;
+  font-weight: 900 !important;
+  border-radius: 25px !important;
+  cursor: pointer !important;
+  box-shadow: 2px 2px 0px #1a1a1a !important;
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+  white-space: nowrap;
+}
+.print-dl-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px #1a1a1a !important;
+}
+
