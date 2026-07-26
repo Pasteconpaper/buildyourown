@@ -1,12 +1,28 @@
+:root {
+  --color-bg: #fdfaf2;
+  --color-dark: #1a1a1a;
+  --color-primary: #ea7316;
+  --color-accent-orange: #ff9800;
+  --color-accent-green: #4caf50;
+  --color-accent-mint: #7ae2be;
+  --color-accent-red: #F24822;
+  --color-accent-yellow: #ffea00;
+  --shadow-brutal: 4px 4px 0px #1a1a1a;
+  --shadow-brutal-sm: 2px 2px 0px #1a1a1a;
+  --shadow-mint: 4px 4px 0px #7ae2be;
+  --border-brutal: 4px solid #1a1a1a;
+  --border-brutal-sm: 3px solid #1a1a1a;
+}
+
 body { 
   font-family: 'Helvetica Neue', Arial, sans-serif; 
-  background-color: #fdfaf2; 
+  background-color: var(--color-bg); 
   background-image: 
     radial-gradient(rgba(26, 26, 26, 0.03) 1px, transparent 0),
     radial-gradient(rgba(26, 26, 26, 0.02) 1px, transparent 0);
   background-size: 4px 4px, 6px 6px;
   background-position: 0 0, 2px 2px;
-  color: #1a1a1a; 
+  color: var(--color-dark); 
   margin: 0; 
   display: flex; 
   justify-content: center; 
@@ -16,6 +32,7 @@ body {
 
 /* APP LAYOUT */
 .app-wrapper { display: flex; flex-direction: column; gap: 20px; max-width: 850px; width: 100%; position: relative; }
+
 
 /* NEO-BRUTALIST HEADER */
 .app-header { 
@@ -199,6 +216,19 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
 .lightbox-canvas-box {
   background: #ffffff !important; padding: 16px !important; border-radius: 8px !important; width: 380px !important; max-width: 100% !important;
   box-shadow: 0px 25px 70px rgba(26, 22, 15, 0.22), 0px 5px 20px rgba(26, 22, 15, 0.08) !important;
+}
+.lightbox-canvas-box .canvas-container { 
+  width: 100% !important; 
+  height: auto !important; 
+  aspect-ratio: 1075 / 1854; 
+  position: relative; 
+}
+.lightbox-canvas-box canvas { 
+  width: 100% !important; 
+  height: 100% !important; 
+  position: absolute !important; 
+  top: 0; 
+  left: 0; 
 }
 
 /* START OVER CUSTOM PROMPT */
