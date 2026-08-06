@@ -602,12 +602,12 @@ input[type="text"]::placeholder, input[type="password"]::placeholder { color: #8
 }
 #bakerPinInput {
   width: 100% !important;
-  max-width: 200px !important;
+  max-width: 140px !important; /* Reduced to ensure it fits mobile boxes */
   margin: 0 auto 10px auto !important;
-  letter-spacing: 0.3em !important;
+  letter-spacing: 0.25em !important; /* Slightly reduced for centering */
   font-size: 1.4rem !important;
   text-align: center !important;
-  padding: 10px 8px 10px 16px !important;
+  padding: 10px !important; /* Unified padding, removed right-bias */
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   appearance: none !important;
