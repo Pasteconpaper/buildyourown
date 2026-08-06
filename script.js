@@ -722,6 +722,7 @@ function renderPreviewSheetGrid(cleanImgUrl, cutlineImgUrl, cWidth, cHeight, pre
     
     const backgroundUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/5001f07a-737b-48eb-9cfd-62bcb5b4cf46/PasteConPaper_Background.jpg?content-type=image%2Fjpeg'; 
     
+    // FIX: Added { crossOrigin: 'anonymous' } to prevent mobile canvas tainting
     fabric.Image.fromURL(backgroundUrl, function(bgImg) {
         if (bgImg) { 
             bgImg.set({ 
@@ -1159,33 +1160,44 @@ window.handleLogoTap = function() {
 window.BAKER_PIN = "8921";
 
 
-// --- UPDATE 2: Fix Cross-Origin Canvas Tainting ---
-// Inside your renderPreviewSheetGrid function, update the fabric.Image.fromURL call:
-function renderPreviewSheetGrid(cleanImgUrl, cutlineImgUrl, cWidth, cHeight, previewCanvasObj) {
-    previewCanvasObj.clear();
-    
-    const backgroundUrl = 'https://images.squarespace-cdn.com/content/696e90a0119f252471e6c387/5001f07a-737b-48eb-9cfd-62bcb5b4cf46/PasteConPaper_Background.jpg?content-type=image%2Fjpeg'; 
-    
-    // FIX: Added { crossOrigin: 'anonymous' } to prevent mobile canvas tainting
-    fabric.Image.fromURL(backgroundUrl, function(bgImg) {
-        if (bgImg) { 
-            bgImg.set({ 
-                originX: 'left', originY: 'top', left: 0, top: 0, 
-                scaleX: previewCanvasObj.width / bgImg.width,
-                scaleY: previewCanvasObj.height / bgImg.height,
-                selectable: false, isHeaderElement: true 
-            }); 
-            previewCanvasObj.add(bgImg); 
-        }
+window.openBakerAdmin = function() {
+  const modal = document.getElementById('bakerAdminModal');
+  const pinGate = document.getElementById('bakerPinGate');
+  const printQueue = document.getElementById('bakerPrintQueue');
+  const pinInput = document.getElementById('bakerPinInput');
+  const err = document.getElementById('pinErrorMsg');
+  
+  if (pinInput) pinInput.value = "";
+  if (err) err.style.display = 'none';
+  if (pinGate) pinGate.style.display = 'block';
+  if (printQueue) printQueue.style.display = 'none';
+  if (modal) modal.style.display = 'flex';
+  
+  if (pinInput) setTimeout(() => pinInput.focus(), 300);
+};
 
-        /* ... [Keep the rest of your math and layout code in this function exact same] ... */
-        
-    }, { crossOrigin: 'anonymous' }); // <-- CRITICAL: Mobile fix
-}
+window.closeBakerAdmin = function() {
+  const modal = document.getElementById('bakerAdminModal');
+  if (modal) modal.style.display = 'none';
+};
 
+window.verifyBakerPin = function() {
+  const pinInput = document.getElementById('bakerPinInput');
+  const err = document.getElementById('pinErrorMsg');
+  const pinGate = document.getElementById('bakerPinGate');
+  const printQueue = document.getElementById('bakerPrintQueue');
+
+  if (pinInput && pinInput.value.trim() === window.BAKER_PIN) {
+    if (err) err.style.display = 'none';
+    if (pinGate) pinGate.style.display = 'none';
+    if (printQueue) printQueue.style.display = 'block';
+    window.renderBakerPrintQueue();
+  } else {
+    if (err) err.style.display = 'block';
+  }
+};
 
 // --- UPDATE 3: Render Image Icons in Queue ---
-// Update this function to include the actual image thumbnail in the UI
 window.renderBakerPrintQueue = function() {
   const listContainer = document.getElementById('bakerOrderList');
   if (!listContainer) return;
