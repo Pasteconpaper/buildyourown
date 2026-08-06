@@ -149,9 +149,9 @@ body {
 .closet-item.greyed-out:hover { filter: grayscale(20%); opacity: 0.9; transform: scale(1.05); box-shadow: 2px 2px 0px #1a1a1a; }
 
 /* INPUT FIELDS */
-input[type="text"] { width: 100%; background: #fbfbf6; color: #1a1a1a; border: 4px solid #1a1a1a; border-radius: 50px; padding: 12px 15px; font-size: 1rem; outline: none; box-sizing: border-box; transition: 0.1s; margin: 0; text-align: center; box-shadow: 4px 4px 0px #1a1a1a; font-weight: bold; }
-input[type="text"]:focus { border-color: #ea7316; box-shadow: 4px 4px 0px #ea7316; }
-input[type="text"]::placeholder { color: #888; font-weight: normal; }
+input[type="text"], input[type="password"] { width: 100%; background: #fbfbf6; color: #1a1a1a; border: 4px solid #1a1a1a; border-radius: 50px; padding: 12px 15px; font-size: 1rem; outline: none; box-sizing: border-box; transition: 0.1s; margin: 0; text-align: center; box-shadow: 4px 4px 0px #1a1a1a; font-weight: bold; }
+input[type="text"]:focus, input[type="password"]:focus { border-color: #ea7316; box-shadow: 4px 4px 0px #ea7316; }
+input[type="text"]::placeholder, input[type="password"]::placeholder { color: #888; font-weight: normal; }
 
 /* THE CUTTING BOARD SPACE */
 .cutting-board-wrapper { position: relative; display: flex; flex-direction: column; width: 400px; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15); }
@@ -577,9 +577,32 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
 
 /* BAKER'S KITCHEN ADMIN PRINT QUEUE */
 .admin-box {
-  max-width: 440px !important;
+  max-width: 400px !important;
   width: 90% !important;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
+  padding: 24px 18px !important;
+  overflow: hidden !important;
+}
+.admin-box h2 {
+  font-size: 1.6rem !important;
+  word-break: break-word;
+}
+.admin-box p {
+  font-size: 0.9rem !important;
+  line-height: 1.3 !important;
+  margin-bottom: 16px !important;
+}
+#bakerPinGate {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+#bakerPinInput {
+  width: 100% !important;
+  letter-spacing: 14px !important;
+  font-size: 1.5rem !important;
+  text-align: center !important;
+  padding-left: 24px !important; /* Center dots with letter spacing */
+  box-sizing: border-box !important;
 }
 .order-list-container {
   max-height: 45vh;
@@ -601,6 +624,7 @@ input[type="text"]::placeholder { color: #888; font-weight: normal; }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  box-sizing: border-box;
 }
 .order-info {
   text-align: left;
