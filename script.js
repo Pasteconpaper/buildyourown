@@ -1159,7 +1159,6 @@ window.handleLogoTap = function() {
 // --- UPDATE 1: Set new PIN ---
 window.BAKER_PIN = "8921";
 
-
 window.openBakerAdmin = function() {
   const modal = document.getElementById('bakerAdminModal');
   const pinGate = document.getElementById('bakerPinGate');
